@@ -8,7 +8,7 @@
 :root{
   --bg:#040405;
   --panel:#0f1012;
-  --muted: rgb(255, 255, 255);
+  --muted: #ffffff;
   --ok-blue:#2b6ef6;
   --border-light:rgba(255,255,255,0.3);
   --gap:12px;
@@ -17,11 +17,6 @@
   --radius:12px;
   --font-sans:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   --max-tile-size:110px;
-}
-body {
-  font-family: var(--font-sans);
-  color: #ffffff; /* Это сделает основной текст белым */
-  ...
 }
 @media (orientation: landscape) and (max-width:1024px){ :root{ --cols:4; --max-tile-size:110px; } }/* базовые стили */ *{box-sizing:border-box;margin:0;padding:0} html,body{height:100%;width:100%;overflow-x:hidden;background:linear-gradient(180deg,#040405 0%,#0b0c0e 100%);-webkit-font-smoothing:antialiased} body{font-family:var(--font-sans);color:#fff;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);display:flex;justify-content:center} .wrapper{width:100%;max-width:1200px;padding:14px} .search-row{display:flex;align-items:center;margin-bottom:14px;padding-inline:6px} .search-box{ flex:1; display:flex; align-items:center; border:2px solid rgba(255,255,255,0.6); padding:4px; border-radius:24px; background:var(--panel); min-height:52px; } .engine-btn, .ok-btn { display:flex; align-items:center; justify-content:center; background:transparent; border:0; padding:0 12px; cursor:pointer; user-select:none; } .engine-btn { flex-shrink: 0; width:44px; height:44px; border-radius:999px; background:#111213; position:relative; overflow:hidden; } .engine-icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; } .search-input{ flex:1; border: none; background: transparent; outline: none; color: #fff; font-size: 16px; padding: 8px 6px; min-width: 0; } .ok-btn{ background: var(--ok-blue); color: #fff; padding: 8px 12px; border-radius: 10px; font-weight: 700; flex-shrink: 0; } .divider { width: 1px; background: var(--border-light); height: 60%; margin: 0 4px; }
 
