@@ -1,0 +1,3210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Стартовая — адаптивная (с группами) — исправленная</title>
+<style>
+:root{
+  --bg:#040405;
+  --panel:#0f1012;
+  --muted: rgb(255, 255, 255);
+  --ok-blue:#2b6ef6;
+  --border-light:rgba(255,255,255,0.3);
+  --gap:12px;
+  --cols:5;
+  --tile-gap:10px;
+  --radius:12px;
+  --font-sans:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --max-tile-size:110px;
+}
+@media (orientation: landscape) and (max-width:1024px){ :root{ --cols:4; --max-tile-size:110px; } }/* базовые стили */ *{box-sizing:border-box;margin:0;padding:0} html,body{height:100%;width:100%;overflow-x:hidden;background:linear-gradient(180deg,#040405 0%,#0b0c0e 100%);-webkit-font-smoothing:antialiased} body{font-family:var(--font-sans);color:#fff;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);display:flex;justify-content:center} .wrapper{width:100%;max-width:1200px;padding:14px} .search-row{display:flex;align-items:center;margin-bottom:14px;padding-inline:6px} .search-box{ flex:1; display:flex; align-items:center; border:2px solid rgba(255,255,255,0.6); padding:4px; border-radius:24px; background:var(--panel); min-height:52px; } .engine-btn, .ok-btn { display:flex; align-items:center; justify-content:center; background:transparent; border:0; padding:0 12px; cursor:pointer; user-select:none; } .engine-btn { flex-shrink: 0; width:44px; height:44px; border-radius:999px; background:#111213; position:relative; overflow:hidden; } .engine-icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; } .search-input{ flex:1; border: none; background: transparent; outline: none; color: #fff; font-size: 16px; padding: 8px 6px; min-width: 0; } .ok-btn{ background: var(--ok-blue); color: #fff; padding: 8px 12px; border-radius: 10px; font-weight: 700; flex-shrink: 0; } .divider { width: 1px; background: var(--border-light); height: 60%; margin: 0 4px; }
+
+/* tiles */ .tiles{ display:grid; grid-template-columns:repeat(var(--cols),minmax(0,1fr)); gap:var(--tile-gap); align-items:start; position:relative; transition: height 120ms linear; justify-items:center; touch-action: pan-y; -webkit-overflow-scrolling: touch; } .tile{ display:flex; flex-direction:column; align-items:center; gap:8px; min-height:84px; text-align:center; cursor:pointer; user-select:none; position:relative; max-width: var(--max-tile-size); width:100%; touch-action: pan-y; } .tile-button { width:100%; position:relative; border-radius:12px; background: rgba(15,16,18,0.75); overflow:hidden; border:1px solid rgba(255,255,255,0.08); box-shadow:0 12px 36px rgba(0,0,0,0.6); aspect-ratio:1/1; display:block; touch-action: pan-y; } .tile-button .inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff} .tile-button img { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 70%; max-height: 70%; object-fit: contain; border-radius: 8px; }
+
+.group-preview-item img { position: static !important; transform: none !important; left: auto !important; top: auto !important; max-width: 100% !important; max-height: 100% !important; width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; border-radius: 6px !important; } .tile-label{font-size:13px;color:var(--muted);width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .add-tile{min-width:64px} .add-button{ width:100%; aspect-ratio:1/1; border-radius:12px; background: rgba(13,13,13,0.7); display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;border:1px solid rgba(255,255,255,0.03);transform:scale(0.92) }
+
+/* group specific */ .group-button{ background:transparent; border:1px dashed rgba(255,255,255,0.06); } .group-preview-grid{ position:absolute; inset:8px; display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(2,1fr); gap:4px; opacity:0.9 } .group-preview-item{ border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); font-size:10px; color:#fff }
+
+/* popup: group window layout and pinned controls */
+
+/* ===== Group popup: pinned header near top + scrollable grid below ===== */
+/* Подстраиваемые значения — меняй эти числа по вкусу */
+:root{
+  --group-header-top: 6px;   /* смещение шапки от верхнего края попапа (уменьшай -> ближе к краю) */
+  --group-grid-top: 48px;    /* отступ сверху для области grid (должен быть >= высоты шапки) */
+}
+
+/* tile-button — убираем статическое блокирование свайпа (если у тебя раньше было touch-action:none) */
+.tile-button {
+  width:100%;
+  position:relative;
+  border-radius:12px;
+  background: rgba(15,16,18,0.75);
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 12px 36px rgba(0,0,0,0.6);
+  aspect-ratio:1/1;
+  display:block;
+  /* НЕ ставим touch-action: none здесь — это мешает прокрутке свайпом */
+}
+
+/* сам попап — немного компактнее padding, чтобы шапка могла быть ближе к верхнему краю */
+.group-popup{
+  position:fixed;
+  z-index:2000;
+  background:#1b1b1d;
+  border-radius:12px;
+  border:2px solid rgba(255,255,255,0.06);
+  box-shadow:0 30px 80px rgba(0,0,0,0.8);
+  padding:10px;     /* уменьшили padding, чтобы шапка была ближе к верхнему краю */
+  overflow:visible; /* grid будет сам прокручиваться */
+}
+
+/* header прижат к верхнему краю внутри попапа (значение --group-header-top управляет высотой) */
+.group-popup .popup-header{
+  position:absolute;
+  top: var(--group-header-top);
+  left:12px;
+  right:12px;
+  display:flex;
+  align-items:flex-start;   /* прижать кнопки к верхнему краю шапки */
+  justify-content:space-between;
+  gap:8px;
+  z-index:2210;
+  background:transparent;
+  padding:0;
+}
+
+/* заголовок слева — разрешаем перенос слов, чтобы длинный текст не опускал кнопки вниз */
+.group-popup .popup-header .title{
+  flex:1 1 auto;
+  align-self:flex-start;
+  white-space:normal;
+  word-break:break-word;
+  margin-right:8px;
+  font-weight:700;
+  font-size:16px;
+  line-height:1.05;
+}
+
+/* контейнер кнопок (Import / +) — компактный и прижатый к верху */
+.group-popup .popup-header .actions{
+  display:flex;
+  align-items:flex-start; /* top-aligned so buttons sit at the very top */
+  gap:8px;
+}
+
+/* компактные размеры кнопок в шапке */
+.group-popup .popup-header .btn,
+.group-popup .popup-header .btn.ghost{
+  padding:1px 8px;
+  font-size:13px;
+  line-height:1;
+}
+
+/* обёртка для + с подписью "добавить" под кнопкой */
+.group-popup .add-wrap {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  justify-content:center;
+}
+.group-popup .add-wrap .add-label{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1;
+}
+
+/* grid занимает остальную часть попапа и скроллится — touch-action позволяет вертик. свайп */
+.group-popup .grid{
+  position:absolute;
+  top: var(--group-grid-top);
+  left:12px;
+  right:12px;
+  bottom:12px;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch; /* smooth on iOS */
+  touch-action: pan-y;               /* allow vertical scrolling even when touching tiles */
+  display:grid;
+  gap:10px;
+  padding-bottom:96px;
+  justify-content:center;
+}
+
+/* контейнер кнопок в заголовке: горизонтальный ряд, выровнен по центру по высоте */
+.group-popup .popup-header .actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* мелкая модификация для подписи "добавить" под + */
+.group-popup .add-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; justify-content:center; }
+
+ allow wrapping of long group titles */
+.group-popup .popup-controls{ position:absolute; left:12px; bottom:12px; z-index:2200; display:flex; gap:8px; } 
+/* internal close (kept for backward compat but hidden by default) */
+.group-popup .popup-close{ position:absolute; right:12px; bottom:12px; z-index:2200; display:none; } 
+.group-popup .popup-close .btn{ border:1px solid rgba(255,255,255,0.08); background:transparent; color:#fff; }
+
+/* external close button (placed under popup, right) */
+.group-popup-external-close{ position:fixed; z-index:2200; display:flex; align-items:center; justify-content:center; } 
+.group-popup-external-close .btn{ padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:transparent; color:#fff; font-weight:700 }
+
+/* context/menu/modal */ .menu{ position:fixed; background:var(--panel); border-radius:10px; padding:0px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 20px 50px rgba(0,0,0,0.7); min-width:200px; z-index:995; } .menu button{display:flex;align-items:center;width:100%;text-align:left;padding:8px;background:transparent;border:0;color:#fff;border-radius:8px;cursor:pointer;font-size:14px;gap:8px} .menu button:hover{background:#151516} .menu .icon{display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center} .menu .check{margin-left:auto;color:var(--ok-blue);font-size:14px} .modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:3000} .modal{background:var(--panel);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 20px 50px rgba(0,0,0,0.7);width:92%;max-width:420px} .field{display:flex;flex-direction:column;gap:8px;margin-bottom:8px} .field input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:#0d0d0d;color:#fff;outline:0;font-size:15px} .modal-actions{display:flex;gap:8px;justify-content:flex-end} .btn{padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700} .btn.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)} .btn.primary{background:var(--ok-blue);color:#fff} .hidden{display:none}
+
+/* small variant for group header buttons */
+.group-popup .btn.ghost.small{ background:#6b6b6b; color:#fff; padding:6px 8px; font-size:13px; border:0; border-radius:8px; }
+.group-popup .btn.cancel.small{ background:#6b6b6b; color:#fff; padding:6px 8px; font-size:13px; border:0; border-radius:8px; }
+
+/* small label under + */
+.group-popup .add-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+
+/* move mode visuals */ .move-delete { position:absolute; right:8px; top:8px; width:28px; height:28px; border-radius:6px; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; cursor:pointer; z-index:1200; border:1px solid rgba(255,255,255,0.06); } .move-controls { position: fixed; z-index: 1205; display: flex; gap: 8px; pointer-events: auto; left: 16px; bottom: calc(16px + 100px); } .move-controls .btn { font-weight:800; padding:8px 12px; border-radius:10px; border:0; } .move-controls .btn.cancel { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); } .move-controls .btn.ok { background:var(--ok-blue); color:#fff; } .dragging { box-shadow:0 18px 48px rgba(0,0,0,0.75); transform: translateZ(0) scale(1.02); }
+
+/* highlight target tile during drag */ .tile.drop-target .tile-button { outline: 3px solid rgba(43,110,246,0.95); box-shadow: 0 18px 40px rgba(43,110,246,0.12); }
+
+/* transitions */ .tile { transition: left 160ms ease, top 160ms ease, width 120ms ease, height 120ms ease; } .tile.dragging { transition: none !important; }
+
+/* responsive tweaks */ @media (max-width:480px){ .wrapper{ padding:10px; max-width:100%; } .search-row{padding-inline:6px} .engine-btn{width:40px;height:40px} .ok-btn{padding:8px 10px} }
+
+/* page background element (fixed, stays while content scrolls) */ .page-bg{ position:fixed; inset:0; z-index:-1; background-size:cover; background-position:center; background-repeat:no-repeat; background-attachment:fixed; transition:opacity .18s ease, filter .18s ease; pointer-events:none; }
+
+/* settings FAB */ .settings-fab{ position:fixed; right:16px; bottom:16px; z-index:1100; width:56px; height:56px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:#111214; border:1px solid rgba(255,255,255,0.06); box-shadow:0 12px 30px rgba(0,0,0,0.6); cursor:pointer; } .settings-fab:active{ transform: translateY(1px); } .settings-fab svg{ width:24px; height:24px; }
+
+.toggle { margin-left:auto; display:inline-flex; align-items:center; gap:8px; } .switch { width:40px; height:22px; background:#222; border-radius:999px; position:relative; padding:2px; box-sizing:border-box; } .switch .knob{ width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .14s linear; transform: translateX(0); } .switch.on{ background: #2b6ef6; } .switch.on .knob{ transform: translateX(18px); }
+
+.hidden-input{ display:none; } .engine-row { display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.02); } .engine-row .icon{ width:28px; height:28px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; } .engine-row .label { flex:1; } .engine-row .actions { display:flex; gap:8px; align-items:center; } .icon-edit-row{ display:flex; gap:10px; align-items:flex-start; } .icon-preview{ width:64px; height:64px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:1px solid rgba(255,255,255,0.03); } .icon-preview img{ max-width:100%; max-height:100%; object-fit:contain; } .icon-edit-controls{ display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; } .icon-buttons-row{ display:flex; gap:8px; justify-content:flex-start; flex-wrap:wrap; } .icon-buttons-row .btn { padding:8px 10px; font-weight:700; border-radius:8px; } .icon-url-field{ margin-top:4px; } @media (max-width:420px){ .icon-edit-row{ flex-direction:row; gap:8px; align-items:center; } .icon-preview{ width:56px; height:56px; } .icon-buttons-row{ gap:6px; } .modal{ padding:10px; } }
+
+/* === Group popup header buttons: grey bg + white text, compact size === */
+.group-popup .popup-header .btn.ghost,
+.group-popup .popup-header .btn.ghost.small,
+.group-popup .popup-header .add-wrap .btn {
+  background: #4a4a4a;        /* серый фон */
+  color: #ffffff;             /* белый текст */
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 8px;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* чуть компактнее для явно маленьких кнопок */
+.group-popup .popup-header .btn.ghost.small {
+  padding: 5px 7px;
+  font-size: 10px;
+  border-radius: 7px;
+}
+
+/* + кнопка — сделаем чуть крупнее, но с тем же стилем */
+.group-popup .popup-header .add-wrap .btn {
+  width: 38px;
+  height: 10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  padding:0;
+}
+
+/* подпись "добавить" под + */
+.group-popup .add-wrap .add-label { color:#fff; opacity:0.9; font-size:11px; }
+
+/* hover / active */
+.group-popup .popup-header .btn.ghost:hover,
+.group-popup .popup-header .add-wrap .btn:hover {
+  filter: brightness(1.08);
+}
+
+/* фокусная рамка — на клавиатуре видно */
+.group-popup .popup-header .btn.ghost:focus,
+.group-popup .popup-header .add-wrap .btn:focus {
+  outline: 2px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
+}
+
+/* Дополнительный override: "Отмена" и "Удалить все" — такой же серый фон */
+.group-popup .btn-cancel,
+.group-popup .btn-delete-all,
+.group-popup .popup-footer .btn.cancel,
+.group-popup .popup-footer .btn.delete-all,
+button[data-action="cancel"],
+button[data-action="delete-all"],
+button.cancel,
+button.delete-all,
+button[data-role="cancel"],
+button[data-role="delete-all"] {
+  background: #4a4a4a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+}
+
+/* Сохраняем тот же стиль при наведении/фокусе */
+.group-popup .btn-cancel:hover,
+.group-popup .btn-delete-all:hover,
+.group-popup .btn-cancel:focus,
+.group-popup .btn-delete-all:focus,
+button.cancel:hover,
+button.delete-all:hover,
+button.cancel:focus,
+button.delete-all:focus {
+  background: #4a4a4a !important;
+  color: #ffffff !important;
+  opacity: 0.95 !important;
+}
+
+/* Гарантированный override: кнопки останутся серыми даже если другие правила переопределяют их во время move-mode */
+.group-popup-external-close .btn,
+.group-popup .popup-close .btn {
+  background: #4a4a4a !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+}
+ </style>
+
+</head>
+<body>
+  <!-- page background element (fixed) -->
+  <div id="pageBg" class="page-bg" aria-hidden="true"></div>
+  <div class="wrapper">
+    <div class="search-row" id="searchRow">
+      <div class="search-box" id="searchBox">
+        <button class="engine-btn" id="engineBtn" tabindex="0" aria-haspopup="listbox" aria-expanded="false" title="Выбрать поисковик">
+          <div class="engine-icon" id="engineIcon"><!-- icon injected --></div>
+        </button>
+        <div class="divider"></div>
+        <input id="omnibox" class="search-input" placeholder="Введите запрос или URL" inputmode="search" aria-label="Поиск или адрес" />
+        <div class="divider"></div>
+        <button id="okBtn" class="ok-btn" aria-label="Искать">ОК</button>
+      </div>
+    </div><div class="tiles" id="tiles">
+  <div class="tile add-tile" id="addTile" tabindex="0">
+    <div class="add-button" id="addBtn" aria-label="Добавить сайт">+</div>
+  </div>
+</div>
+
+  </div>  <div id="engineMenuRoot" style="position:fixed;left:0;top:0;pointer-events:none;z-index:990"></div>
+  <div id="contextRoot" style="position:fixed;left:0;top:0;pointer-events:none;z-index:996"></div>  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" id="addModal" role="dialog" aria-modal="true">
+      <div class="field">
+        <input id="siteName" placeholder="Название" />
+      </div>
+      <div class="field">
+        <input id="siteUrl" placeholder="Адрес (например example.com)" />
+      </div><!-- Icon edit area -->
+      <div class="field">
+        <div class="icon-edit-row">
+          <div class="icon-preview" id="iconPreview" title="Текущая иконка">
+            <!-- injected img or svg -->
+          </div>
+          <div class="icon-edit-controls">
+            <div class="icon-buttons-row">
+              <button class="btn ghost" id="chooseIconBtn" type="button">Выбрать</button>
+              <button class="btn ghost" id="removeIconBtn" type="button">Удалить</button>
+              <button class="btn ghost" id="refreshIconBtn" type="button">Обновить</button>
+            </div>
+            <div class="icon-url-field">
+              <input id="iconUrlInput" placeholder="URL иконки (опционально)" />
+            </div>
+          </div>
+        </div>
+      </div><div class="modal-actions" style="margin-top:8px">
+    <button class="btn ghost" id="cancelAdd">Отмена</button>
+    <button class="btn primary" id="saveAdd">Сохранить</button>
+  </div>
+</div>
+
+  </div>  <button id="settingsFab" class="settings-fab" aria-label="Настройки" title="Настройки" aria-expanded="false">
+    <!-- gear icon -->
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7z" fill="#fff" opacity="0.95"/>
+      <path d="M19.4 12.6c.04-.2.06-.4.06-.6s-.02-.4-.06-.6l2.1-1.6a.5.5 0 0 0 .12-.63l-2-3.46a.5.5 0 0 0-.6-.22l-2.49 1a7.2 7.2 0 0 0-1.04-.6l-.38-2.65A.5.5 0 0 0 12.9 2h-4a.5.5 0 0 0-.49.42l-.38 2.66c-.36.16-.7.36-1.03.59l-2.5-1a.5.5 0 0 0-.6.22L2.4 8.7a.5.5 0 0 0 .12.63l2.1 1.6c-.04.2-.06.4-.06.6s.02.4.06.6l-2.1 1.6a.5.5 0 0 0-.12.63l2 3.46c.13.23.4.33.63.22l2.49-1c.33.23.67.43 1.03.59l.38 2.66c.05.26.27.42.49.42h4c.23 0 .44-.16.49-.42l.38-2.65c.36-.16.7-.36 1.04-.6l2.49 1c.23.11.5.01.63-.22l2-3.46a.5.5 0 0 0-.12-.63l-2.1-1.6z" fill="#fff" opacity="0.6"/>
+    </svg>
+  </button>  <input id="bgFileInput" class="hidden-input" type="file" accept="image/*" />
+  <input id="jsonImportInput" class="hidden-input" type="file" accept="application/json" />
+  <input id="iconFileInput" class="hidden-input" type="file" accept="image/*" />
+  <!-- new input for html/txt import -->
+  <input id="htmlImportInput" class="hidden-input" type="file" accept=".html,.htm,text/html,.txt,text/plain" />
+<script>
+/* ===== Data / state ===== */
+let engines = [
+  { id:'google', name:'Google', letter:'G', q:'https://www.google.com/search?q=' , svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.35 11.1h-9.18v2.84h5.26c-.23 1.44-1.25 2.66-2.67 3.48v2.9h4.32C20.05 18.5 22 15.2 22 12c0-.64-.07-1.26-.18-1.9z"/><path fill="#34A853" d="M12.17 22c2.88 0 5.3-.95 7.07-2.6l-4.32-2.9c-1.2.8-2.74 1.28-4.75 1.28-3.65 0-6.75-2.47-7.87-5.8H.87v3.64A11.98 11.98 0 0 0 12.17 22z"/><path fill="#FBBC05" d="M4.3 13.89a7.16 7.16 0 0 1 0-3.78V6.47H.87a11.98 11.98 0 0 0 0 10.07l3.43-2.65z"/><path fill="#EA4335" d="M12.17 4.48c1.56 0 2.95.54 4.06 1.6l3.03-3.03C17.47 1.34 15.06.4 12.17.4 7.9.4 4.2 2.61 1.9 5.9l3.43 2.65c1.12-3.33 4.22-5.81 7.84-5.81z"/></svg>', builtin:true },
+  { id:'yandex', name:'Яндекс', letter:'Я', q:'https://yandex.ru/search/?text=', svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF0000" d="M12 2l4 20H8L12 2z"/></svg>', builtin:true },
+  { id:'yahoo', name:'Yahoo', letter:'Y', q:'https://search.yahoo.com/search?p=', svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#410093" d="M12 2l3.464 6H8.536L12 2zm0 4l-4 7.464v6.536h8v-6.536L12 6z"/></svg>', builtin:true },
+  { id:'bing', name:'Bing', letter:'B', q:'https://www.bing.com/search?q=', svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#009940" d="M2 3l10 5v12l-10-5V3zM12 8l10-5v12l-10 5V8z"/></svg>', builtin:true },
+  { id:'brave', name:'Brave', letter:'b', q:'https://search.brave.com/search?q=', svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FB542B" d="M12 2L2 7v10l10 5 10-5V7l-10-5z"/></svg>', builtin:true },
+  { id:'duckduckgo', name:'DuckDuckGo', letter:'D', q:'https://duckduckgo.com/?q=', svg:'<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#DE5833"/><path fill="#FFF" d="M8 10c0-2 2-4 4-4s4 2 4 4c0 1.5-1 2.8-2.5 3.5L12 18l-1.5-4.5C9 12.8 8 11.5 8 10z"/></svg>', builtin:true }
+];
+
+let selectedEngine = engines[0];
+const STORAGE_KEY = 'start_shortcuts_v4';
+const PREF_ENGINE_KEY = 'preferred_search_engine';
+const BG_DATA_KEY = 'custom_bg_data_v1';
+const SEARCH_ENABLED_KEY = 'search_row_visible_v1';
+const ENGINES_STATE_KEY = 'start_engines_v1';
+
+const DEFAULT_SVG_STRING = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='#2b6ef6'/><path fill='#ffffff' fill-opacity='0.06' d='M2 12a10 10 0 0 0 20 0 10 10 0 0 0-20 0z'/></svg>`;
+const DEFAULT_ICON_DATA_URL = 'data:image/svg+xml;utf8,' + encodeURIComponent(DEFAULT_SVG_STRING);
+
+/* refs */
+const engineBtn = document.getElementById('engineBtn');
+const engineIcon = document.getElementById('engineIcon');
+const engineMenuRoot = document.getElementById('engineMenuRoot');
+const contextRoot = document.getElementById('contextRoot');
+let contextRootPrevZ = null;
+const omnibox = document.getElementById('omnibox');
+const okBtn = document.getElementById('okBtn');
+const tiles = document.getElementById('tiles');
+const addBtn = document.getElementById('addBtn');
+const addTile = document.getElementById('addTile');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const siteName = document.getElementById('siteName');
+const siteUrl = document.getElementById('siteUrl');
+const saveAdd = document.getElementById('saveAdd');
+const cancelAdd = document.getElementById('cancelAdd');
+const settingsFab = document.getElementById('settingsFab');
+const pageBg = document.getElementById('pageBg');
+const bgFileInput = document.getElementById('bgFileInput');
+const jsonImportInput = document.getElementById('jsonImportInput');
+const iconFileInput = document.getElementById('iconFileInput');
+const searchRow = document.getElementById('searchRow');
+const htmlImportInput = document.getElementById('htmlImportInput');
+
+const iconPreview = document.getElementById('iconPreview');
+const iconUrlInput = document.getElementById('iconUrlInput');
+const chooseIconBtn = document.getElementById('chooseIconBtn');
+const removeIconBtn = document.getElementById('removeIconBtn');
+const refreshIconBtn = document.getElementById('refreshIconBtn');
+
+const ENGINE_MENU_SETTINGS = { width:220, offsetX:0, offsetY:8, prefer:'bottom' };
+const SETTINGS_MENU_SETTINGS = { width:220, offsetX:0, offsetY:60, prefer:'above' };
+
+/* move-state */
+let isMoveMode = false;
+let snapshotBeforeMove = [];
+let deletedDuringMove = [];
+let moveControls = null;
+let activeDrag = null;
+let holdTimer = null;
+
+let flowOrder = [];
+let placeholderIndex = -1;
+let createdHistory = [];
+
+/* group move state */
+let isGroupMoveMode = false;
+let groupMoveSnapshot = null;
+let groupMoveControls = null;
+let groupMoveTarget = null;
+let groupMoveDeleted = []; // track deletions during group move so cancel can restore
+let groupMoveControlsRepositionHandler = null;
+
+/* external group close btn ref */
+let externalGroupCloseBtn = null;
+let externalGroupCloseRepositionHandler = null;
+
+/* flag to avoid race closing group popup when clicking context menu -> move */
+let skipGroupPopupClose = false;
+
+function buildFlowOrder(){
+  flowOrder = Array.from(tiles.querySelectorAll('.tile')).filter(n => n !== addTile);
+}
+
+/* ===== helper: compute main tile size, and group items helpers ===== */
+function computeMainTileSize(){
+  const tileGap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tile-gap')) || 10;
+  const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols'), 10) || 4;
+  const contWidth = Math.max(tiles.clientWidth, tiles.getBoundingClientRect().width);
+  const totalGap = (cols - 1) * tileGap;
+  let tileWidth = Math.max(48, Math.floor((contWidth - totalGap) / cols));
+  const maxTileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--max-tile-size')) || 120;
+  tileWidth = Math.min(tileWidth, maxTileSize);
+  return tileWidth;
+}
+
+
+function setGroupItems(group, items){
+  try{
+    group._items = Array.isArray(items) ? items.slice() : [];
+    group.dataset.items = JSON.stringify(group._items);
+  }catch(e){
+    try{ group._items = Array.isArray(items)? items.slice() : []; }catch(e){ group._items = []; }
+    try{ group.dataset.items = JSON.stringify(group._items); }catch(e){}
+  }
+
+  // небольшой защитный вызов сохранения: сохраняем асинхронно, чтобы избежать рекурсий
+  // и чтобы точно записать изменения в localStorage сразу после модификации группы.
+  setTimeout(()=>{
+    try{
+      saveAll();
+    }catch(err){
+      console.error('Ошибка при saveAll после setGroupItems:', err);
+      // если проблема — скорее всего квота localStorage; сообщаем пользователю
+      try{
+        if(err && (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)){
+          alert('Не удалось сохранить изменения: превышен лимит локального хранилища. Уменьши размер иконок или отключи автоматическое встраивание иконок.');
+        }
+      }catch(e){}
+    }
+  }, 0);
+}
+function getGroupItems(group){
+  if(Array.isArray(group._items)) return group._items;
+  try{
+    const ds = group.dataset && group.dataset.items;
+    if(ds){
+      const parsed = JSON.parse(ds);
+      if(Array.isArray(parsed)){ group._items = parsed; return group._items; }
+    }
+  }catch(e){}
+  group._items = [];
+  return group._items;
+}
+
+/* ===== Позиционирование и ресайз-логика плиток (как раньше) ===== */
+function updateFlowPositions(animated = true){
+  const tileGap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tile-gap')) || 10;
+  const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols'), 10) || 4;
+  const contWidth = Math.max(tiles.clientWidth, tiles.getBoundingClientRect().width);
+  const totalGap = (cols - 1) * tileGap;
+  let tileWidth = Math.max(48, Math.floor((contWidth - totalGap) / cols)); // минимум 48px
+  const maxTileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--max-tile-size')) || 120;
+  tileWidth = Math.min(tileWidth, maxTileSize);
+
+  flowOrder.forEach((n, i) => {
+    if(!n) return;
+    if(activeDrag && activeDrag.tile === n) return; // тащим — не перезаписываем позицию
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    n.style.width = tileWidth + 'px';
+    n.style.height = tileWidth + 'px';
+    n.style.left = (col * (tileWidth + tileGap)) + 'px';
+    n.style.top = (row * (tileWidth + tileGap)) + 'px';
+    n.style.zIndex = 1000;
+  });
+  // обновим контейнер по высоте
+  const rows = Math.ceil(flowOrder.length / cols) || 1;
+  const totalH = rows * tileWidth + (rows - 1) * tileGap;
+  tiles.style.minHeight = (totalH + 20) + 'px';
+}
+
+/* Возвращаем индекс вставки по позиции указателя */
+function getTargetIndexFromPoint(clientX, clientY, excludeTile){
+  const contRect = tiles.getBoundingClientRect();
+  const cx = clientX - contRect.left;
+  const cy = clientY - contRect.top;
+  const items = flowOrder.filter(t => t !== excludeTile);
+  if(items.length === 0) return 0;
+
+  let minDist = Infinity;
+  let nearestIdx = 0;
+  for(let i = 0; i < items.length; i++){
+    const t = items[i];
+    const r = t.getBoundingClientRect();
+    const centerX = r.left - contRect.left + r.width / 2;
+    const centerY = r.top - contRect.top + r.height / 2;
+    const dx = cx - centerX;
+    const dy = cy - centerY;
+    const d2 = dx*dx + dy*dy;
+    if(d2 < minDist){
+      minDist = d2;
+      nearestIdx = i;
+    }
+  }
+
+  const nearestRect = items[nearestIdx].getBoundingClientRect();
+  const nearestCenterX = nearestRect.left - contRect.left + nearestRect.width / 2;
+  if(cx > nearestCenterX) return nearestIdx + 1;
+  return nearestIdx;
+}
+
+function applyFlowReorderWhenDragging(dragTile, insertIndex){
+  const without = flowOrder.filter(n => n !== dragTile);
+  without.splice(insertIndex, 0, dragTile);
+  flowOrder = without;
+  flowOrder.forEach(n => tiles.insertBefore(n, addTile));
+  tiles.querySelectorAll('.tile').forEach(n => n.classList.remove('drop-target'));
+  const neighbor = flowOrder[insertIndex + 1] || flowOrder[insertIndex - 1] || null;
+  if(neighbor && neighbor !== dragTile) neighbor.classList.add('drop-target');
+  updateFlowPositions(false);
+}
+
+/* helpers */
+function isProbablyUrl(val){
+  if(!val) return false;
+  const t = val.trim();
+  if(/\s/.test(t)) return false;
+  if(/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(t)) return true;
+  return t.includes('.') && !t.startsWith('.') && !t.endsWith('.');
+}
+function openCurrent(url){
+  try {
+    if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = 'https://' + url;
+    const p = new URL(url);
+    if(p.protocol === 'javascript:') return;
+    window.location.href = p.href;
+  } catch(e){ openSearchCurrent(url); }
+}
+function openSearchCurrent(q){
+  const s = encodeURIComponent(q.trim());
+  window.location.href = (selectedEngine && selectedEngine.q ? selectedEngine.q : engines[0].q) + s;
+}
+function navigate(){ const v = omnibox.value.trim(); if(!v) return; if(isProbablyUrl(v)) openCurrent(v); else openSearchCurrent(v); }
+
+/* pref engine */
+function savePreferredEngine(id){ try{ localStorage.setItem(PREF_ENGINE_KEY, id); }catch(e){} }
+function loadPreferredEngine(){
+  try{
+    const id = localStorage.getItem(PREF_ENGINE_KEY);
+    if(id){
+      const f = engines.find(e => e.id === id);
+      if(f) selectedEngine = f;
+      else selectedEngine = engines[0] || null;
+    } else selectedEngine = engines[0] || null;
+
+    if(selectedEngine){
+      if(selectedEngine.svg) engineIcon.innerHTML = selectedEngine.svg;
+      else if(selectedEngine.icon) engineIcon.innerHTML = `<img src="${escapeHtml(selectedEngine.icon)}" width="20" height="20" />`;
+      else engineIcon.innerHTML = `<img src="${escapeHtml(DEFAULT_ICON_DATA_URL)}" width="20" height="20" />`;
+      engineBtn.title = `По умолчанию: ${selectedEngine.name}`;
+    } else {
+      engineIcon.innerHTML = '';
+      engineBtn.title = 'Выбрать поисковик';
+    }
+  }catch(e){}
+}
+
+/* persistence for engines */
+function saveEnginesState(){ try{ localStorage.setItem(ENGINES_STATE_KEY, JSON.stringify(engines)); }catch(e){} }
+function loadEnginesState(){ try{ const raw = localStorage.getItem(ENGINES_STATE_KEY); if(raw === null) return null; const arr = JSON.parse(raw); if(Array.isArray(arr)) return arr; }catch(e){} return null; }
+function initEnginesFromStorage(){ const stored = loadEnginesState(); if(Array.isArray(stored)) engines = stored.map(e => Object.assign({}, e)); }
+
+/* fetch image and convert to dataURL (best-effort; may fail due to CORS) */
+async function fetchImageAsDataURL(url){
+  try{
+    if(!url) return null;
+    // if already data:, return as is
+    if(url.startsWith('data:')) return url;
+    const resp = await fetch(url, {mode:'cors'});
+    if(!resp.ok) return null;
+    const blob = await resp.blob();
+    // convert blob -> dataURL
+    return await new Promise((res)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>res(reader.result);
+      reader.onerror = ()=>res(null);
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){
+    return null;
+  }
+}
+
+/* ensure icon stored as dataURL for offline usage (best-effort) */
+async function ensureIconStoredForNode(node){
+  try{
+    if(!node) return;
+    const existing = node._icon || '';
+    if(!existing) return;
+    if(existing.startsWith('data:')) return; // already embedded
+    // try to fetch and convert
+    const data = await fetchImageAsDataURL(existing);
+    if(data){
+      node._icon = data;
+      // update DOM img if present
+      const img = node.querySelector('img');
+      if(img) img.src = data;
+      saveAll();
+    }
+  }catch(e){}
+}
+
+/* engine menu rendering (unchanged) */
+let engineMenuNode = null;
+let engineManageMode = false;
+let engineSelectionForDelete = new Set();
+
+function renderEngineMenu(left, top, menuW = ENGINE_MENU_SETTINGS.width){
+  engineMenuRoot.innerHTML='';
+  engineMenuNode = document.createElement('div');
+  engineMenuNode.className='menu engine-menu';
+  engineMenuNode.style.pointerEvents='auto';
+
+  engines.forEach((e,idx)=>{
+    const row = document.createElement('div');
+    row.className = 'engine-row';
+    row.dataset.index = idx;
+
+    const iconWrap = document.createElement('div');
+    iconWrap.className = 'icon';
+    iconWrap.style.width = '28px';
+    iconWrap.style.height = '28px';
+    iconWrap.style.display = 'inline-flex';
+    iconWrap.style.alignItems = 'center';
+    iconWrap.style.justifyContent = 'center';
+    iconWrap.style.borderRadius = '6px';
+    iconWrap.style.overflow = 'hidden';
+
+    if(e.svg){
+      iconWrap.innerHTML = e.svg;
+    } else {
+      const im = document.createElement('img');
+      im.src = e.icon || DEFAULT_ICON_DATA_URL;
+      im.alt = e.name;
+      im.style.width='24px'; im.style.height='24px'; im.style.objectFit='contain';
+      im.onerror = ()=>{ im.src = DEFAULT_ICON_DATA_URL; };
+      iconWrap.appendChild(im);
+    }
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = e.name;
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    if(engineManageMode){
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'engine-checkbox';
+      chk.style.transform = 'translateY(0)';
+      chk.checked = engineSelectionForDelete.has(e.id);
+      chk.addEventListener('click', (ev)=>{ ev.stopPropagation(); if(chk.checked) engineSelectionForDelete.add(e.id); else engineSelectionForDelete.delete(e.id); });
+      actions.appendChild(chk);
+    }
+
+    if(!e.builtin){
+      const editBtn = document.createElement('button');
+      editBtn.type='button';
+      editBtn.textContent='Изменить';
+      editBtn.style.fontSize='12px';
+      editBtn.style.padding='6px 8px';
+      editBtn.style.borderRadius='8px';
+      editBtn.style.background='transparent';
+      editBtn.style.color='var(--muted)';
+      editBtn.addEventListener('click', (ev)=>{
+        ev.stopPropagation();
+        hideEngineMenu();
+        showEngineModal(e);
+      });
+      actions.appendChild(editBtn);
+    }
+
+    row.appendChild(iconWrap);
+    row.appendChild(label);
+    row.appendChild(actions);
+
+    row.addEventListener('click', (ev)=>{
+      if(engineManageMode) return;
+      selectedEngine = e;
+      engineIcon.innerHTML = e.svg || `<img src="${escapeHtml(DEFAULT_ICON_DATA_URL)}" width="20" height="20" />`;
+      engineBtn.title = `По умолчанию: ${e.name}`;
+      savePreferredEngine(e.id);
+      hideEngineMenu();
+      omnibox.focus();
+    });
+
+    let hold = null;
+    row.addEventListener('mousedown', (ev)=>{
+      if(e.builtin) return;
+      ev.preventDefault();
+      hold = setTimeout(()=>{ hideEngineMenu(); showEngineModal(e); }, 550);
+    });
+    row.addEventListener('mouseup', ()=>{ if(hold){ clearTimeout(hold); hold=null; } });
+    row.addEventListener('mouseleave', ()=>{ if(hold){ clearTimeout(hold); hold=null; } });
+    row.addEventListener('touchstart', (ev)=>{ if(e.builtin) return; hold = setTimeout(()=>{ hideEngineMenu(); showEngineModal(e); }, 550); }, {passive:true});
+    row.addEventListener('touchend', ()=>{ if(hold){ clearTimeout(hold); hold=null; } });
+    row.addEventListener('touchcancel', ()=>{ if(hold){ clearTimeout(hold); hold=null; } });
+
+    engineMenuNode.appendChild(row);
+  });
+
+  const footer = document.createElement('div');
+  footer.style.padding='8px';
+  footer.style.borderTop='1px solid rgba(255,255,255,0.03)';
+  footer.style.display = 'flex';
+  footer.style.flexDirection = 'column';
+  footer.style.gap = '6px';
+
+  const addBtnEngine = document.createElement('button');
+  addBtnEngine.type='button';
+  addBtnEngine.textContent = 'Добавить поисковик';
+  addBtnEngine.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    hideEngineMenu();
+    showEngineModal(null);
+  });
+
+  const manageBtn = document.createElement('button');
+  manageBtn.type='button';
+  manageBtn.textContent = engineManageMode ? 'Выйти из управления' : 'Управление поисковиками';
+  manageBtn.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    engineManageMode = !engineManageMode;
+    if(!engineManageMode) engineSelectionForDelete.clear();
+    renderEngineMenu(left, top, menuW);
+  });
+
+  footer.appendChild(addBtnEngine);
+  footer.appendChild(manageBtn);
+
+  if(engineManageMode){
+    const delBtn = document.createElement('button');
+    delBtn.type='button';
+    delBtn.textContent = 'Удалить отмеченные';
+    delBtn.style.background = '#a33';
+    delBtn.style.color = '#fff';
+    delBtn.addEventListener('click', (ev)=>{
+      ev.stopPropagation();
+      if(engineSelectionForDelete.size === 0){ alert('Нет выбранных поисковиков для удаления.'); return; }
+      const ok = confirm('Удалить отмеченные поисковики?');
+      if(!ok) return;
+      engines = engines.filter(en => !engineSelectionForDelete.has(en.id));
+      engineSelectionForDelete.clear();
+      saveEnginesState();
+      if(selectedEngine && !engines.find(en=>en.id===selectedEngine.id)){
+        selectedEngine = engines[0] || null;
+        if(selectedEngine) savePreferredEngine(selectedEngine.id); else try{ localStorage.removeItem(PREF_ENGINE_KEY); }catch(e){}
+      }
+      renderEngineMenu(left, top, menuW);
+    });
+    footer.appendChild(delBtn);
+  }
+
+  engineMenuNode.appendChild(footer);
+  engineMenuRoot.appendChild(engineMenuNode);
+
+  const rect = engineMenuNode.getBoundingClientRect();
+  const w = rect.width || menuW;
+  const h = rect.height || 200;
+  let leftClamped = left;
+  let topClamped = top;
+
+  if(leftClamped + w > window.innerWidth - 8) leftClamped = Math.max(8, window.innerWidth - w - 8);
+  if(topClamped + h > window.innerHeight - 8) topClamped = Math.max(8, window.innerHeight - h - 8);
+  if(leftClamped < 8) leftClamped = 8;
+  if(topClamped < 8) topClamped = 8;
+
+  engineMenuNode.style.left = leftClamped + 'px';
+  engineMenuNode.style.top = topClamped + 'px';
+
+  contextRoot.style.pointerEvents = 'auto';
+  setTimeout(()=>document.addEventListener('click', onDocClickCloseEngine), 0);
+}
+function onDocClickCloseEngine(ev){ if(!engineBtn.contains(ev.target) && !(engineMenuNode && engineMenuNode.contains(ev.target))){ hideEngineMenu(); } }
+function showEngineMenu(){
+  const r = engineBtn.getBoundingClientRect();
+  const menuW = ENGINE_MENU_SETTINGS.width;
+  let left = r.left + ENGINE_MENU_SETTINGS.offsetX;
+  let top;
+
+  if(ENGINE_MENU_SETTINGS.prefer === 'bottom'){
+    top = r.bottom + ENGINE_MENU_SETTINGS.offsetY;
+  } else if (ENGINE_MENU_SETTINGS.prefer === 'top'){
+    top = r.top - ENGINE_MENU_SETTINGS.offsetY;
+  } else {
+    left = r.left + (r.width - menuW) / 2 + ENGINE_MENU_SETTINGS.offsetX;
+    top = r.bottom + ENGINE_MENU_SETTINGS.offsetY;
+  }
+
+  renderEngineMenu(left, top, menuW);
+  engineBtn.setAttribute('aria-expanded','true');
+}
+function hideEngineMenu(){ engineMenuRoot.innerHTML=''; engineBtn.setAttribute('aria-expanded','false'); document.removeEventListener('click', onDocClickCloseEngine); engineMenuNode=null; engineManageMode=false; engineSelectionForDelete.clear(); }
+
+/* add/edit modal for engines and tiles */
+let modalMode = 'tile';
+let currentEditNode = null; // tile node when editing tile
+let currentEditEngine = null; // engine object when editing engine
+let stagedIconData = null; // dataURL or URL set in modal (temporary)
+let currentGroupContext = null; // when adding/editing inside group
+let currentEditGroupItem = null;
+
+function showAddModal(editNode=null, groupContext=null){
+  modalMode = 'tile';
+  currentEditNode = editNode;
+  currentEditEngine = null;
+  stagedIconData = null;
+  currentGroupContext = groupContext || null;
+  siteName.placeholder = 'Название';
+  siteUrl.placeholder = 'Адрес (например example.com)';
+  siteName.value = editNode ? (editNode.querySelector('.tile-label').textContent || '') : '';
+  siteUrl.value = editNode ? (editNode._url || '') : '';
+  iconUrlInput.value = editNode && (editNode._icon || '') ? editNode._icon : '';
+  stagedIconData = iconUrlInput.value || null;
+  renderIconPreview(stagedIconData || (editNode && editNode._icon) || null);
+
+  modalBackdrop.style.display='flex';
+  modalBackdrop.style.pointerEvents='auto';
+  modalBackdrop.setAttribute('aria-hidden','false');
+  setTimeout(()=>siteName.focus(),50);
+
+  saveAdd.onclick = ()=>{
+    const name = siteName.value.trim();
+    let url = siteUrl.value.trim();
+    if(!name || !url) return;
+    if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = 'https://' + url;
+    try { const p = new URL(url);
+      const iconToSave = stagedIconData || (p.hostname ? 'https://www.google.com/s2/favicons?sz=128&domain=' + p.hostname : '');
+      if(editNode) applyEdit(editNode,name,p.href,iconToSave); else createTile(name,p.href,iconToSave,currentGroupContext);
+    }
+    catch(e){
+      const iconToSave = stagedIconData || iconUrlInput.value || '';
+      if(editNode) applyEdit(editNode,name,url,iconToSave); else createTile(name,url,iconToSave,currentGroupContext);
+    }
+    hideAddModal();
+  };
+}
+function showEngineModal(editEngine=null){
+  modalMode = 'engine';
+  currentEditEngine = editEngine;
+  currentEditNode = null;
+  stagedIconData = null;
+  siteName.placeholder = 'Название поисковика';
+  siteUrl.placeholder = 'URL-шаблон (например https://www.google.com/search?q=)';
+  siteName.value = editEngine ? (editEngine.name || '') : '';
+  siteUrl.value = editEngine ? (editEngine.q || '') : '';
+  iconUrlInput.value = editEngine ? (editEngine.icon || '') : '';
+  stagedIconData = iconUrlInput.value || null;
+  renderIconPreview(stagedIconData || (editEngine && editEngine.icon) || null);
+
+  modalBackdrop.style.display='flex';
+  modalBackdrop.style.pointerEvents='auto';
+  modalBackdrop.setAttribute('aria-hidden','false');
+  setTimeout(()=>siteName.focus(),50);
+
+  saveAdd.onclick = ()=>{
+    const name = siteName.value.trim();
+    let q = siteUrl.value.trim();
+    if(!name || !q){ alert('Укажи название и URL-шаблон поиска.'); return; }
+    if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(q)) q = 'https://' + q;
+    if(currentEditEngine){
+      // update existing
+      currentEditEngine.name = name;
+      currentEditEngine.q = q;
+      currentEditEngine.icon = stagedIconData || '';
+      // preserve id and builtin flag
+    } else {
+      // create new engine object
+      const id = 'eng_' + Date.now() + Math.random().toString(36).slice(2,7);
+      engines.push({ id, name, q, svg: '', icon: stagedIconData || '', builtin:false });
+      // set new engine as selected by default
+      selectedEngine = engines[engines.length - 1];
+      try{ localStorage.setItem(PREF_ENGINE_KEY, selectedEngine.id); }catch(e){}
+    }
+    saveEnginesState();
+    hideAddModal();
+  };
+}
+
+function hideAddModal(){
+  modalBackdrop.style.display='none';
+  modalBackdrop.style.pointerEvents='none';
+  modalBackdrop.setAttribute('aria-hidden','true');
+  saveAdd.onclick=null;
+  currentEditNode=null;
+  currentEditEngine=null;
+  stagedIconData=null;
+  modalMode='tile';
+  siteName.placeholder='Название';
+  siteUrl.placeholder='Адрес (например example.com)';
+  currentGroupContext = null;
+  currentEditGroupItem = null;
+}
+
+/* render preview in modal */
+function renderIconPreview(src){
+  iconPreview.innerHTML = '';
+  const img = document.createElement('img');
+  if(!src){
+    img.src = DEFAULT_ICON_DATA_URL;
+    img.alt = 'default';
+    iconPreview.appendChild(img);
+    return;
+  }
+  img.src = src;
+  img.alt = 'icon';
+  img.onload = ()=>{};
+  img.onerror = ()=>{ img.src = DEFAULT_ICON_DATA_URL; };
+  iconPreview.appendChild(img);
+}
+
+/* tiles create/edit/delete (now supports optional parentGroup) */
+function createTile(name, url, icon, parentGroup=null){
+  const node = document.createElement('div');
+  node.className='tile';
+  node.tabIndex=0;
+
+  const btn = document.createElement('div');
+  btn.className='tile-button';
+  btn.setAttribute('role','button');
+  btn.setAttribute('aria-label',name);
+
+  const inner = document.createElement('div');
+  inner.className='inner';
+  inner.textContent = initials(name);
+  btn.appendChild(inner);
+
+  const img = document.createElement('img');
+  node._icon = icon || '';
+  (function setImgSrc(){
+    try{
+      if(node._icon){
+        img.src = node._icon;
+      } else {
+        const p = new URL(url);
+        img.src = 'https://www.google.com/s2/favicons?sz=128&domain=' + p.hostname;
+      }
+    }catch(e){
+      img.src = DEFAULT_ICON_DATA_URL;
+    }
+    img.alt = name;
+    img.onload = function(){ inner.style.display='none'; if(!btn.contains(img)) btn.appendChild(img); };
+    img.onerror = function(){ inner.style.display='flex'; if(img.src !== DEFAULT_ICON_DATA_URL){ img.src = DEFAULT_ICON_DATA_URL; } };
+    btn.appendChild(img);
+  })();
+
+  const label = document.createElement('div');
+  label.className='tile-label';
+  label.textContent = name;
+
+  node.appendChild(btn);
+  node.appendChild(label);
+  node._url = url;
+
+  // click: open unless in move-mode or if node belongs to group and group not expanded
+  btn.addEventListener('click', (e)=>{
+    if(isMoveMode || isGroupMoveMode){ e.stopPropagation(); e.preventDefault(); return; }
+    if(node._parentGroup && !node._parentGroup._expanded){ e.stopPropagation(); e.preventDefault(); return; }
+    openCurrent(node._url);
+  });
+  btn.addEventListener('keydown', (e)=>{ if(e.key==='Enter') openCurrent(node._url); });
+
+  // context menu: only show when NOT in move-mode
+  node.addEventListener('contextmenu', function(ev){
+    ev.preventDefault();
+    if(isMoveMode || isGroupMoveMode) return; // suppress in move mode
+    showContextMenuAt(ev.clientX, ev.clientY, this);
+  });
+
+  // touch long-press => context (only when not in move mode)
+  node.addEventListener('touchstart', function(ev){
+    if(isMoveMode || isGroupMoveMode) return;
+    const self=this;
+    this._lp=setTimeout(()=>showContextMenuForNode(self),700);
+  }, {passive:false});
+  node.addEventListener('touchend', function(){ if(this._lp){ clearTimeout(this._lp); this._lp=null; } });
+
+  if(parentGroup){
+    // update group items array and preview
+    const items = getGroupItems(parentGroup).slice();
+    items.push({ name, url, icon: node._icon });
+    setGroupItems(parentGroup, items);
+    // immediately update group's small preview
+    try{ renderGroupPreview(parentGroup); }catch(e){}
+
+    // if this group's popup is currently open, append new subtile to the popup grid so user sees it instantly
+    try{
+      if(currentGroupOpen === parentGroup && groupPopupNode){
+        const grid = groupPopupNode.querySelector('.grid');
+        if(grid){
+          const sub = document.createElement('div');
+          sub.className = 'subtile';
+          const b2 = document.createElement('div'); b2.className = 'tile-button'; b2.style.aspectRatio = '1/1';
+          // set same size as main tiles
+          const tW = computeMainTileSize();
+          b2.style.width = tW + 'px';
+          b2.style.height = tW + 'px';
+          b2.style.display = 'flex';
+          b2.style.alignItems = 'center';
+          b2.style.justifyContent = 'center';
+
+          const img2 = document.createElement('img'); img2.src = node._icon || DEFAULT_ICON_DATA_URL; img2.alt = name; img2.style.maxWidth='70%'; img2.style.maxHeight='70%';
+          b2.appendChild(img2);
+          const lab2 = document.createElement('div'); lab2.className = 'tile-label'; lab2.style.fontSize='12px'; lab2.textContent = name;
+          lab2.style.textAlign = 'center';
+          lab2.style.width = '100%';
+          sub.appendChild(b2); sub.appendChild(lab2);
+          sub._meta = { name: name, url: url, icon: node._icon };
+          sub.addEventListener('click',(ev)=>{ ev.stopPropagation(); try{ if(sub._meta && sub._meta.url) window.open(sub._meta.url,'_blank'); }catch(e){} });
+          sub.addEventListener('contextmenu',(ev)=>{ ev.preventDefault(); showContextMenuAt(ev.clientX, ev.clientY, sub); });
+          let lp=null; sub.addEventListener('touchstart',(ev)=>{ lp=setTimeout(()=>{ const t = ev.touches && ev.touches[0]; showContextMenuAt(t? t.clientX: window.innerWidth/2, t? t.clientY: window.innerHeight/2, sub); }, 500); },{passive:true});
+          sub.addEventListener('touchend',()=>{ if(lp){ clearTimeout(lp); lp=null; } });
+          grid.appendChild(sub);
+          // if in move mode, attach controls
+          if(isMoveMode || isGroupMoveMode){
+            addDeleteXToSub(sub, parentGroup);
+            enableDragForSubtile(sub, parentGroup);
+          }
+          // ensure preview also updated
+          try{ renderGroupPreview(parentGroup); }catch(e){}
+        }
+      }
+    }catch(e){}
+    node._parentGroup = parentGroup;
+    // keep node in group's container for possible future use (not appended to main tiles)
+    parentGroup._container.appendChild(node);
+    saveAll();
+  } else {
+    tiles.insertBefore(node, addTile);
+    // push to recent history for group previews
+    createdHistory.push({ name, icon: node._icon });
+    if(createdHistory.length > 50) createdHistory.shift();
+    saveAll();
+  }
+
+  // Try to fetch and embed icon as dataURL for offline use (best-effort)
+  ensureIconStoredForNode(node);
+
+  return node;
+}
+
+function initials(name){
+  const p = name.trim().split(/\s+/);
+  if(p.length===1) return p[0].slice(0,2).toUpperCase();
+  return (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+}
+
+function applyEdit(node, name, url, icon){
+  node.querySelector('.tile-label').textContent = name;
+  node._url = url;
+  node._icon = icon || '';
+  const inner = node.querySelector('.inner');
+  inner.style.display='flex';
+  inner.textContent = initials(name);
+  const oldImg = node.querySelector('img');
+  if(oldImg) oldImg.remove();
+  const newImg = document.createElement('img');
+  try{
+    if(node._icon){
+      newImg.src = node._icon;
+    } else {
+      const p = new URL(url);
+      newImg.src = 'https://www.google.com/s2/favicons?sz=128&domain=' + p.hostname;
+    }
+    newImg.alt = name;
+    newImg.onload = function(){ inner.style.display='none'; node.querySelector('.tile-button').appendChild(newImg); };
+    newImg.onerror = function(){ inner.style.display='flex'; if(newImg.src !== DEFAULT_ICON_DATA_URL) { newImg.src = DEFAULT_ICON_DATA_URL; } };
+    node.querySelector('.tile-button').appendChild(newImg);
+  }catch(e){
+    // if url invalid - still attach default
+    newImg.src = DEFAULT_ICON_DATA_URL;
+    newImg.alt = name;
+    newImg.onload = function(){ inner.style.display='none'; node.querySelector('.tile-button').appendChild(newImg); };
+  }
+  saveAll();
+  // try to fetch and store icon as dataURL
+  ensureIconStoredForNode(node);
+}
+
+/* ===== GROUPS: create group tile, preview and popup ===== */
+function createGroup(name){
+  const node = document.createElement('div');
+  node.className='tile group-tile';
+  node.tabIndex=0;
+  node._isGroup = true;
+  node._groupName = name || 'Группа';
+  setGroupItems(node, []);
+
+  const btn = document.createElement('div');
+  btn.className='tile-button group-button';
+  btn.setAttribute('role','button');
+  btn.setAttribute('aria-label', 'Группа: ' + node._groupName);
+
+  // preview 2x2
+  const preview = document.createElement('div');
+  preview.className = 'group-preview-grid';
+  btn.appendChild(preview);
+
+  const label = document.createElement('div');
+  label.className='tile-label';
+  label.textContent = node._groupName;
+
+  node.appendChild(btn);
+  node.appendChild(label);
+
+  // store container for group's internal tiles when expanded
+  node._container = document.createElement('div');
+  node._container.className = 'group-inner-container';
+
+  // render preview using createdHistory (last 4)
+  renderGroupPreview(node);
+
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(isMoveMode || isGroupMoveMode) return;
+    toggleGroupPopup(node);
+  });
+
+  // context menu for group (edit name, delete, move)
+  node.addEventListener('contextmenu', function(ev){ ev.preventDefault(); if(isMoveMode || isGroupMoveMode) return; showContextMenuAt(ev.clientX, ev.clientY, this); });
+
+  tiles.insertBefore(node, addTile);
+  saveAll();
+  return node;
+}
+
+function renderGroupPreview(groupNode){
+  const preview = groupNode.querySelector('.group-preview-grid');
+  if(!preview) return;
+  preview.innerHTML = '';
+  // Only show group's own items (up to 4).
+  const items = getGroupItems(groupNode).slice(0,4);
+  for(let i=0;i<4;i++){
+    const el = document.createElement('div');
+    el.className = 'group-preview-item';
+    if(items[i]){
+      const im = document.createElement('img');
+      im.src = items[i].icon || DEFAULT_ICON_DATA_URL;
+      im.alt = items[i].name || '';
+      im.style.maxWidth='100%'; im.style.maxHeight='100%'; im.style.objectFit='cover';
+      im.onerror = function(){ this.remove(); };
+      el.appendChild(im);
+    }
+    preview.appendChild(el);
+  }
+}
+
+let currentGroupOpen = null;
+let groupPopupNode = null;
+
+/* helper: render popup grid content from group's stored items (used to open and to restore on cancel) */
+function renderGroupPopupContent(groupNode){
+  if(!groupPopupNode) return;
+  const grid = groupPopupNode.querySelector('.grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const items = Array.isArray(getGroupItems(groupNode)) ? getGroupItems(groupNode).slice() : [];
+  const mainTileSize = computeMainTileSize();
+
+  // Make grid columns fixed to tile size so subtile spacing is compact (3 columns)
+  grid.style.gridTemplateColumns = `repeat(3, ${mainTileSize}px)`;
+  grid.style.gridAutoRows = mainTileSize + 'px';
+  grid.style.justifyContent = 'center';
+  grid.style.gap = Math.max(8, Math.round(mainTileSize * 0.08)) + 'px';
+
+  items.forEach(it => {
+    const sub = document.createElement('div');
+    sub.className = 'subtile';
+    sub.style.width = mainTileSize + 'px';
+    sub.style.boxSizing = 'border-box';
+    sub.style.display = 'flex';
+    sub.style.flexDirection = 'column';
+    sub.style.alignItems = 'center';
+    sub.style.justifyContent = 'flex-start';
+    sub.style.gap = '6px';
+    const b = document.createElement('div');
+    b.className='tile-button';
+    b.style.aspectRatio='1/1';
+    b.style.width = mainTileSize + 'px';
+    b.style.height = mainTileSize + 'px';
+    b.style.display = 'flex';
+    b.style.alignItems = 'center';
+    b.style.justifyContent = 'center';
+    const img = document.createElement('img'); img.src = it.icon || DEFAULT_ICON_DATA_URL; img.alt = it.name; img.style.maxWidth='70%'; img.style.maxHeight='70%';
+    b.appendChild(img);
+    const lab = document.createElement('div'); lab.className='tile-label'; lab.style.fontSize='12px'; lab.style.textAlign = 'center'; lab.style.width='100%'; lab.style.overflow='hidden'; lab.style.textOverflow='ellipsis'; lab.style.whiteSpace='nowrap'; lab.textContent = it.name;
+    sub.appendChild(b); sub.appendChild(lab);
+    sub._meta = { name: it.name, url: it.url, icon: it.icon };
+    // allow contextmenu on desktop
+    sub.addEventListener('contextmenu', (ev)=>{ ev.preventDefault(); showContextMenuAt(ev.clientX, ev.clientY, sub); });
+    // click to open
+    sub.addEventListener('click', (ev)=>{ ev.stopPropagation(); try{ window.open(it.url, '_blank'); }catch(e){} });
+
+    // long-press handlers (mouse and touch) to show same context menu as main tiles
+    let lpTimer = null;
+    sub.addEventListener('mousedown', (ev)=>{ lpTimer = setTimeout(()=>{ showContextMenuAt(ev.clientX, ev.clientY, sub); }, 550); });
+    sub.addEventListener('mouseup', ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } });
+    sub.addEventListener('mouseleave', ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } });
+    sub.addEventListener('touchstart', (ev)=>{ const t = ev.touches && ev.touches[0]; lpTimer = setTimeout(()=>{ if(t) showContextMenuAt(t.clientX, t.clientY, sub); }, 550); }, {passive:true});
+    sub.addEventListener('touchend', ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } });
+
+    grid.appendChild(sub);
+  });
+
+  // if group move mode is active, attach delete icons and enable drag
+  if(isGroupMoveMode){
+    const subs = Array.from(grid.querySelectorAll('.subtile'));
+    subs.forEach(s => {
+      try{ addDeleteXToSub(s, groupNode); }catch(e){}
+      try{ enableDragForSubtile(s, groupNode); }catch(e){}
+    });
+  }
+}
+
+/* Strong, explicit "delete all" handler for a group (works from popup header or other places) */
+function deleteAllGroupItems(groupNode){
+  if(!groupNode) return;
+  // ask confirm
+  if(!confirm('Удалить все элементы в группе "' + (groupNode._groupName||'Группа') + '"? Это действие будет окончательным.')) return;
+
+  // ensure we are not stuck in group-move mode — exit it before destructive action to restore listeners and avoid blocking context menus
+  if(isGroupMoveMode){
+    try{ exitGroupMoveMode(false); }catch(e){ console.error('deleteAllGroupItems exitGroupMoveMode error', e); }
+  }
+
+  // clear storage
+  try{
+    setGroupItems(groupNode, []);
+  }catch(e){ console.error('setGroupItems error', e); }
+
+  // clear internal container DOM if present
+  try{
+    if(groupNode._container){
+      while(groupNode._container.firstChild) groupNode._container.removeChild(groupNode._container.firstChild);
+    }
+  }catch(e){ console.error('clear _container error', e); }
+
+  // clear popup grid DOM if popup open for this group
+  try{
+    if(groupPopupNode && currentGroupOpen === groupNode){
+      const grid = groupPopupNode.querySelector('.grid');
+      if(grid){
+        while(grid.firstChild) grid.removeChild(grid.firstChild);
+      }
+    }
+  }catch(e){ console.error('clear popup grid error', e); }
+
+  // update preview, save
+  renderGroupPreview(groupNode);
+  saveAll();
+
+  // After deletion, ensure normal context menus work (group move mode already exited)
+  // no further action required
+}
+
+/* external close button positioning (right bottom under popup) */
+function createExternalGroupCloseButton(){
+  destroyExternalGroupCloseButton();
+  externalGroupCloseBtn = document.createElement('div');
+  externalGroupCloseBtn.className = 'group-popup-external-close';
+  const btn = document.createElement('button');
+  btn.className = 'btn ghost';
+  btn.textContent = 'Закрыть';
+  btn.addEventListener('click', (e)=>{ e.stopPropagation(); closeGroupPopup(); });
+  externalGroupCloseBtn.appendChild(btn);
+  document.body.appendChild(externalGroupCloseBtn);
+
+  function reposition(){
+    if(!groupPopupNode || !externalGroupCloseBtn) return;
+
+    // If groupMoveControls exist (in move mode), place external close to the right of them;
+    // otherwise place under popup as before.
+    if(groupMoveControls){
+      try{
+        const gRect = groupMoveControls.getBoundingClientRect();
+        const ebRect = externalGroupCloseBtn.getBoundingClientRect();
+        let left = Math.round(gRect.right + 8);
+        let top = Math.round(gRect.top);
+        if(left + ebRect.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - ebRect.width - 8);
+        if(left < 8) left = 8;
+        if(top + ebRect.height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - ebRect.height - 8);
+        if(top < 8) top = 8;
+        externalGroupCloseBtn.style.left = left + 'px';
+        externalGroupCloseBtn.style.top = top + 'px';
+        return;
+      }catch(e){}
+    }
+
+    const rect = groupPopupNode.getBoundingClientRect();
+    const btnRect = externalGroupCloseBtn.getBoundingClientRect();
+    // place right-aligned under popup with small padding
+    let left = Math.round(rect.right - btnRect.width - 12);
+    let top = Math.round(rect.bottom + 12);
+    if(left + btnRect.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - btnRect.width - 8);
+    if(left < 8) left = 8;
+    if(top + btnRect.height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - btnRect.height - 8);
+    if(top < 8) top = 8;
+    externalGroupCloseBtn.style.left = left + 'px';
+    externalGroupCloseBtn.style.top = top + 'px';
+  }
+  externalGroupCloseRepositionHandler = reposition;
+  window.addEventListener('resize', externalGroupCloseRepositionHandler);
+  window.addEventListener('scroll', externalGroupCloseRepositionHandler, {passive:true});
+  setTimeout(()=>reposition(), 10);
+}
+function destroyExternalGroupCloseButton(){
+  if(!externalGroupCloseBtn) return;
+  try{
+    window.removeEventListener('resize', externalGroupCloseRepositionHandler);
+    window.removeEventListener('scroll', externalGroupCloseRepositionHandler);
+  }catch(e){}
+  externalGroupCloseRepositionHandler = null;
+  externalGroupCloseBtn.remove();
+  externalGroupCloseBtn = null;
+}
+
+function toggleGroupPopup(groupNode){
+  if(currentGroupOpen === groupNode){
+    closeGroupPopup();
+    return;
+  }
+  openGroupPopup(groupNode);
+}
+
+function openGroupPopup(groupNode){
+  closeGroupPopup();
+  currentGroupOpen = groupNode;
+  groupNode._expanded = true;
+
+  groupPopupNode = document.createElement('div');
+  groupPopupNode.className = 'group-popup';
+
+  // Determine square size that fits viewport, with margins
+  const margin = 32;
+  const maxSide = Math.min(window.innerWidth - margin, window.innerHeight - margin);
+  const defaultSide = Math.min(360, maxSide);
+  const side = Math.max(240, defaultSide); // ensure reasonable minimum
+  groupPopupNode.style.width = side + 'px';
+  groupPopupNode.style.height = side + 'px';
+
+  // center on screen
+  const left = Math.max(8, Math.round((window.innerWidth - side) / 2));
+  const top  = Math.max(8, Math.round((window.innerHeight - side) / 2));
+
+  groupPopupNode.style.left = left + 'px';
+  groupPopupNode.style.top = top + 'px';
+
+  
+
+// header
+  const header = document.createElement('div');
+  header.className = 'popup-header';
+
+  const htitle = document.createElement('div');
+  htitle.className = 'title';
+  htitle.textContent = groupNode._groupName || 'Группа';
+
+  const hactions = document.createElement('div');
+  hactions.className = 'actions';
+
+  // IMPORT button for group (left of +)
+  const importInnerBtn = document.createElement('button');
+  importInnerBtn.className = 'btn ghost small';
+  importInnerBtn.textContent = 'Импорт';
+  importInnerBtn.title = 'Импорт ссылок в эту группу (.html/.txt)';
+  importInnerBtn.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    await importUrlsFromFile(groupNode);
+  });
+
+  // + (add) button with small label underneath
+  const addInnerBtn = document.createElement('button');
+  addInnerBtn.className = 'btn ghost';
+  addInnerBtn.textContent = '+';
+  addInnerBtn.title = 'Добавить ярлык в группу';
+  addInnerBtn.addEventListener('click', (e)=>{ e.stopPropagation(); showAddModal(null, groupNode); });
+
+  const addWrap = document.createElement('div');
+  addWrap.className = 'add-wrap';
+  addWrap.appendChild(addInnerBtn);
+  const addLabel = document.createElement('div');
+  addLabel.style.fontSize = '11px';
+  addLabel.style.color = 'var(--muted)';
+  addLabel.textContent = 'добавить';
+  addWrap.appendChild(addLabel);
+
+  // append controls to the actions area (no duplicate "Удалить все" here)
+  hactions.appendChild(importInnerBtn);
+  hactions.appendChild(addWrap);
+
+  header.appendChild(htitle);
+  header.appendChild(hactions);
+
+  groupPopupNode.appendChild(header);
+
+  // grid for items
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+
+  groupPopupNode.appendChild(grid);
+
+  // Note: internal close button kept hidden; we use external close button placed below popup
+  const closeWrap = document.createElement('div');
+  closeWrap.className = 'popup-close';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn ghost';
+  closeBtn.textContent = 'Закрыть';
+  closeBtn.addEventListener('click', (e)=>{ e.stopPropagation(); closeGroupPopup(); });
+  closeWrap.appendChild(closeBtn);
+  // do not append to popup, we'll render external button instead
+  // groupPopupNode.appendChild(closeWrap);
+
+  document.body.appendChild(groupPopupNode);
+
+  // populate content
+  renderGroupPopupContent(groupNode);
+
+  // re-render preview small icons
+  renderGroupPreview(groupNode);
+
+  // create external close button under popup (right side)
+  createExternalGroupCloseButton();
+
+  // close on outside click (with race protection)
+  setTimeout(()=>document.addEventListener('click', onDocClickCloseGroupPopup), 0);
+}
+
+function closeGroupPopup(){
+  if(!groupPopupNode) return;
+  // Если мы в режиме перемещения группы — отменим его (чтобы восстановить все слушатели/флаги),
+  // иначе просто уничтожим контролы (на всякий случай).
+  if(isGroupMoveMode){
+    try{ exitGroupMoveMode(false); }catch(e){ console.error('closeGroupPopup exitGroupMoveMode error', e); }
+  } else {
+    destroyGroupMoveControls();
+  }
+
+  groupPopupNode.remove();
+  groupPopupNode = null;
+  destroyExternalGroupCloseButton();
+  if(currentGroupOpen){ currentGroupOpen._expanded = false; currentGroupOpen = null; }
+  document.removeEventListener('click', onDocClickCloseGroupPopup);
+}
+
+function onDocClickCloseGroupPopup(e){
+  if(skipGroupPopupClose){ skipGroupPopupClose = false; return; }
+  if(!(groupPopupNode && groupPopupNode.contains(e.target))) closeGroupPopup();
+}
+
+/* context menu: синхронное вычисление позиции, не прыгает */
+let contextMenuNode = null;
+function renderContextMenu(x,y,node){
+  contextRootPrevZ = contextRoot.style.zIndex || '';
+  try{ contextRoot.style.zIndex = '2100'; }catch(e){}
+
+  contextRoot.innerHTML='';
+  contextMenuNode = document.createElement('div');
+  contextMenuNode.className='menu';
+  contextMenuNode.style.pointerEvents='auto';
+
+  const btnOpen = document.createElement('button');
+  btnOpen.textContent = 'Открыть в новой вкладке';
+  btnOpen.addEventListener('click', ()=>{ if(node){ const url = node._url || (node._meta && node._meta.url); if(url) window.open(url, '_blank', 'noopener'); } closeContextMenu(); });
+
+  const btnMove = document.createElement('button');
+  btnMove.textContent = 'Переместить';
+  btnMove.addEventListener('click', ()=>{
+    // предотвратить немедленное закрытие попапа группы
+    skipGroupPopupClose = true;
+    closeContextMenu();
+    if(currentGroupOpen && (node && (node._meta || (node._isGroup && node === currentGroupOpen)))){
+      enterGroupMoveMode(currentGroupOpen);
+    } else {
+      enterMoveMode();
+    }
+    setTimeout(()=>{ skipGroupPopupClose = false; }, 0);
+  });
+
+  const btnEdit = document.createElement('button');
+  btnEdit.textContent = 'Изменить';
+  btnEdit.addEventListener('click', ()=>{
+    closeContextMenu();
+    if(node && node._meta){
+      // editing a subtile inside group: use modal so fields are consistent
+      showEditGroupItemModal(node);
+      return;
+    } else if(node && node._isGroup){
+      const oldName = node._groupName || '';
+      const newName = prompt('Название группы:', oldName);
+      if(newName === null) return;
+      node._groupName = newName;
+      const lbl = node.querySelector('.tile-label');
+      if(lbl) lbl.textContent = newName;
+      if(currentGroupOpen === node && groupPopupNode){
+        const headerTitle = groupPopupNode.querySelector('.popup-header > div');
+        if(headerTitle) headerTitle.textContent = newName;
+      }
+      saveAll();
+      return;
+    } else {
+      // node is a regular tile: pass the tile node directly to modal so fields are prefilled
+      showAddModal(node, node._parentGroup || null);
+    }
+  });
+
+  const btnDel = document.createElement('button');
+  btnDel.textContent = 'Удалить';
+  btnDel.addEventListener('click', ()=>{ if(node){
+    if(node._meta){
+      // subtile inside group
+      if(confirm('Удалить этот элемент из группы?')){
+        const parent = node.parentElement;
+        const idx = Array.from(parent.children).indexOf(node);
+        node.remove();
+        if(currentGroupOpen){ const g = currentGroupOpen; if(g){ const items = getGroupItems(g).slice(); items.splice(idx,1); setGroupItems(g, items); renderGroupPreview(g); saveAll(); }}
+      }
+    } else if(node._isGroup){
+      if(confirm('Удалить группу и все её элементы?')){ node.remove(); saveAll(); }
+    } else {
+      node.remove(); saveAll();
+    }
+  } closeContextMenu(); });
+
+  contextMenuNode.appendChild(btnOpen);
+  contextMenuNode.appendChild(btnMove);
+  contextMenuNode.appendChild(btnEdit);
+  contextMenuNode.appendChild(btnDel);
+
+  contextRoot.appendChild(contextMenuNode);
+
+  // initial pos + clamp
+  contextMenuNode.style.left = x + 'px';
+  contextMenuNode.style.top  = y + 'px';
+  const rect = contextMenuNode.getBoundingClientRect();
+  let left = x;
+  let top = y;
+  if(left + rect.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rect.width - 8);
+  if(top + rect.height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - rect.height - 8);
+  contextMenuNode.style.left = left + 'px';
+  contextMenuNode.style.top = top + 'px';
+
+  contextRoot.style.pointerEvents = 'auto';
+  setTimeout(()=>document.addEventListener('click', onDocClickCloseContext), 0);
+}
+function showContextMenuAt(x,y,node){
+  if(isMoveMode || isGroupMoveMode) return;
+  renderContextMenu(x,y,node);
+}
+function showContextMenuForNode(node){
+  if(isMoveMode || isGroupMoveMode) return;
+  const r = node.getBoundingClientRect();
+  renderContextMenu(r.left + 8, r.top + 8, node);
+}
+function onDocClickCloseContext(e){ if(!(contextMenuNode && contextMenuNode.contains(e.target))) closeContextMenu(); }
+function closeContextMenu(){ contextRoot.innerHTML=''; contextRoot.style.pointerEvents='none'; contextMenuNode=null; document.removeEventListener('click', onDocClickCloseContext); try{ contextRoot.style.zIndex = contextRootPrevZ || '996'; }catch(e){} }
+
+/* Block native contextmenu during move mode (capture phase) */
+document.addEventListener('contextmenu', function(e){
+  if(isMoveMode || isGroupMoveMode){
+    e.preventDefault();
+  }
+}, true);
+
+/* save/load (расширено для групп) */
+function saveAll(){
+  const arr=[];
+  tiles.querySelectorAll('.tile').forEach(n => { if(n===addTile) return; if(n._isGroup){ arr.push({ type:'group', name: n._groupName || '', items: (getGroupItems(n) || []).map(it=>({ name: it.name, url: it.url, icon: it.icon })) }); } else { arr.push({ type:'tile', name: n.querySelector('.tile-label')?.textContent || '', url: n._url || '', icon: n._icon || '' }); } });
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }catch(e){}
+  saveEnginesState();
+}
+function loadAll(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const arr = JSON.parse(raw);
+    arr.forEach(s => {
+      if(!s) return;
+      if(s.type === 'group'){
+        const g = createGroup(s.name || 'Группа');
+        setGroupItems(g, s.items || []);
+        // ensure preview updated
+        renderGroupPreview(g);
+      } else if(s.type === 'tile'){
+        createTile(s.name, s.url, s.icon || '');
+      }
+    });
+  }catch(e){}
+}
+
+/* ===== Move mode implementation (main grid) ===== */
+
+function takeSnapshot(){
+  const arr = [];
+  const nodes = Array.from(tiles.querySelectorAll('.tile'));
+  nodes.forEach(n => { if(n===addTile) return; if(n._isGroup){ arr.push({ type:'group', name: n._groupName || '', items: (getGroupItems(n) || []).map(it=>({ name: it.name, url: it.url, icon: it.icon })) }); } else { arr.push({ type:'tile', name: n.querySelector('.tile-label')?.textContent || '', url: n._url || '', icon: n._icon || '' }); } });
+  return arr;
+}
+
+function enterMoveMode(){
+  if(isMoveMode) return;
+  if(isGroupMoveMode) return;
+  isMoveMode = true;
+  snapshotBeforeMove = takeSnapshot();
+  deletedDuringMove = [];
+
+  createMoveControls();
+
+  const contRect = tiles.getBoundingClientRect();
+  const nodes = Array.from(tiles.querySelectorAll('.tile'));
+  // convert to absolute layout but using компонентный расчёт ширины плитки
+  const tileGap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tile-gap')) || 10;
+  const cols = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols'), 10) || 4;
+  const contWidth = Math.max(tiles.clientWidth, tiles.getBoundingClientRect().width);
+  const totalGap = (cols - 1) * tileGap;
+  let tileWidth = Math.max(48, Math.floor((contWidth - totalGap) / cols));
+
+  const maxTileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--max-tile-size')) || 120;
+  tileWidth = Math.min(tileWidth, maxTileSize);
+
+  nodes.forEach((n, idx)=>{
+    if(n===addTile) return;
+    const row = Math.floor(idx / cols);
+    const col = idx % cols;
+
+    // Save inline styles
+    n._origStyle = {
+      position: n.style.position || '',
+      left: n.style.left || '',
+      top: n.style.top || '',
+      width: n.style.width || '',
+      height: n.style.height || '',
+      zIndex: n.style.zIndex || ''
+    };
+
+    n.style.position = 'absolute';
+    n.style.left = (col * (tileWidth + tileGap)) + 'px';
+    n.style.top  = (row * (tileWidth + tileGap)) + 'px';
+    n.style.width = tileWidth + 'px';
+    n.style.height = tileWidth + 'px';
+    n.style.zIndex = 1000;
+
+    addDeleteX(n);
+    enableDragForTile(n);
+  });
+
+  // ensure subtile delete/drag attach if popup open
+  if(groupPopupNode && currentGroupOpen){
+    const subs = Array.from(groupPopupNode.querySelectorAll('.subtile'));
+    subs.forEach(s=>{
+      try{ addDeleteXToSub(s, currentGroupOpen); }catch(e){}
+      try{ enableDragForSubtile(s, currentGroupOpen); }catch(e){}
+    });
+  }
+
+  // prevent layout jump and setup flow
+  tiles.style.minHeight = Math.max(contRect.height, tiles.offsetHeight) + 'px';
+  window.addEventListener('resize', onWindowResize);
+  window.addEventListener('orientationchange', onWindowResize);
+
+  buildFlowOrder();
+  updateFlowPositions(false);
+}
+
+function exitMoveMode(commit=true){
+  if(!isMoveMode) return;
+  // выход из режима перемещения — сначала пометим, что режим закончился
+  isMoveMode = false;
+
+  // Если пользователь нажал ОТМЕНА (commit === false), восстанавливаем снимок сразу —
+  // это гарантирует, что все удалённые плитки вернутся на место прежде чем мы будем убирать
+  // визуальные артефакты и обработчики. Мы используем копию snapshotBeforeMove, чтобы
+  // случайные модификации в дальнейшем не повлияли на восстановление.
+  if(!commit){
+    try{
+      rebuildFromSnapshot(Array.isArray(snapshotBeforeMove) ? snapshotBeforeMove.slice() : []);
+    }catch(e){
+      console.error('exitMoveMode restore error', e);
+    }
+  }
+
+  // очистим интерфейс у текущих плиток (включая восстановленные)
+  const nodes = Array.from(tiles.querySelectorAll('.tile'));
+  nodes.forEach(n=>{
+    if(n===addTile) return;
+    try{ disableDragForTile(n); }catch(e){}
+    try{ removeDeleteX(n); }catch(e){}
+    if(n._origStyle){
+      n.style.position = n._origStyle.position;
+      n.style.left = n._origStyle.left;
+      n.style.top = n._origStyle.top;
+      n.style.width = n._origStyle.width;
+      n.style.height = n._origStyle.height;
+      n.style.zIndex = n._origStyle.zIndex;
+      n._origStyle = null;
+    } else {
+      n.style.position = '';
+      n.style.left = '';
+      n.style.top = '';
+      n.style.width = '';
+      n.style.height = '';
+      n.style.zIndex = '';
+    }
+    n.classList.remove('dragging');
+    n.classList.remove('drop-target');
+  });
+
+  // удалить контролы у subtile в открытой группе
+  if(groupPopupNode && currentGroupOpen){
+    const subs = Array.from(groupPopupNode.querySelectorAll('.subtile'));
+    subs.forEach(s=>{
+      try{ removeDeleteXFromSub(s); }catch(e){}
+      try{ disableDragForSubtile(s); }catch(e){}
+    });
+  }
+
+  destroyMoveControls();
+  window.removeEventListener('resize', onWindowResize);
+  window.removeEventListener('orientationchange', onWindowResize);
+
+  if(commit){
+    // подтверждение: сохраним порядок/состояние
+    commitPositionsAndSave();
+  } else {
+    // отмена: уже восстановлено выше — ничего дополнительно не сохраняем, чтобы не перезаписать
+    // snapshotBeforeMove. Также очистим временные списки.
+    deletedDuringMove = [];
+  }
+  tiles.style.minHeight = '';
+}
+
+/* delete overlay */
+function addDeleteX(tile){
+  if(tile.querySelector('.move-delete')) return;
+  const x = document.createElement('div');
+  x.className = 'move-delete';
+  x.innerHTML = '✕';
+  x.title = 'Удалить';
+  x.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    const name = tile.querySelector('.tile-label')?.textContent || '';
+    const url = tile._url || '';
+    const idx = getFlowIndex(tile);
+    deletedDuringMove.push({ name, url, index: idx });
+    tile.remove();
+    buildFlowOrder();
+    updateFlowPositions(true);
+  });
+  tile.appendChild(x);
+}
+
+function removeDeleteX(tile){
+  const x = tile.querySelector('.move-delete');
+  if(x) x.remove();
+}
+
+/* --- Добавление/удаление крестика для subtile (в группе)
+   Изменено: во время режима перемещения группы удаления не применяются в storage до подтверждения.
+*/
+
+function addDeleteXToSub(sub, group){
+  if(!sub) return;
+  if(sub.querySelector('.move-delete')) return;
+  const x = document.createElement('div');
+  x.className = 'move-delete';
+  x.innerHTML = '✕';
+  x.title = 'Удалить';
+  x.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    const idx = Array.from(sub.parentElement.children).indexOf(sub);
+    // Если мы в group-move mode, то удаление делаем "временным" (без сохранения в storage),
+    // чтобы можно было отменить изменения. Просто удаляем элемент из DOM и запоминаем.
+    if(isGroupMoveMode){
+      groupMoveDeleted.push({ index: idx, meta: sub._meta ? Object.assign({}, sub._meta) : null });
+      sub.remove();
+      // обновим временный dataset/preview
+      try{
+        const newItems = [];
+        const children = Array.from(sub.parentElement.children);
+        children.forEach(ch => {
+          if(ch._meta) newItems.push({ name: ch._meta.name, url: ch._meta.url, icon: ch._meta.icon });
+          else {
+            const lname = ch.querySelector('.tile-label')?.textContent || '';
+            const limg = ch.querySelector('img')?.src || '';
+            const lurl = ch._meta && ch._meta.url ? ch._meta.url : '';
+            newItems.push({ name: lname, url: lurl, icon: limg });
+          }
+        });
+        setGroupItems(group, newItems);
+        renderGroupPreview(group);
+      }catch(e){}
+      return;
+    }
+    // обычное удаление (вне режима перемещения группы) — удаляем и сохраняем
+    sub.remove();
+    if(group && Array.isArray(getGroupItems(group)) && idx >= 0){
+      const items = getGroupItems(group).slice();
+      items.splice(idx, 1);
+      setGroupItems(group, items);
+      renderGroupPreview(group);
+      saveAll();
+    }
+  });
+
+  // Важно: размещаем крестик внутри .tile-button если он есть, иначе в суб-элемент
+  const _delContainer = sub.querySelector('.tile-button') || sub;
+  _delContainer.appendChild(x);
+}
+
+function removeDeleteXFromSub(sub){
+  if(!sub) return;
+  const x = sub.querySelector('.move-delete');
+  if(x) x.remove();
+}
+
+/* move mode helpers for subtile (drag inside popup) */
+function enableDragForSubtile(sub, group){
+  if(!sub) return;
+  const handle = sub.querySelector('.tile-button') || sub;
+  handle.style.touchAction = 'none';
+  let localDrag = null;
+  let hold = null;
+
+  function clearHold(){ if(hold){ clearTimeout(hold); hold = null; } }
+
+  function startDrag(clientX, clientY){
+    const grid = sub.parentElement;
+    const gridRect = grid.getBoundingClientRect();
+    const subRect = sub.getBoundingClientRect();
+    sub.style.width = subRect.width + 'px';
+    sub.style.height = subRect.height + 'px';
+    sub.style.position = 'absolute';
+    sub.style.left = (subRect.left - gridRect.left) + 'px';
+    sub.style.top = (subRect.top - gridRect.top) + 'px';
+    sub.style.zIndex = 2200;
+    sub.classList.add('dragging');
+    localDrag = { sub, grid, offsetX: clientX - subRect.left, offsetY: clientY - subRect.top };
+    grid.appendChild(sub);
+  }
+
+  function onPointerMove(e){
+    if(!localDrag) return;
+    e.preventDefault();
+    const gridRect = localDrag.grid.getBoundingClientRect();
+    const newLeft = e.clientX - gridRect.left - localDrag.offsetX;
+    const newTop = e.clientY - gridRect.top  - localDrag.offsetY;
+    sub.style.left = Math.max(0, Math.round(newLeft)) + 'px';
+    sub.style.top = Math.max(0, Math.round(newTop)) + 'px';
+
+    const items = Array.from(localDrag.grid.children).filter(n => n !== sub);
+    if(items.length === 0) return;
+    let nearest = { idx: 0, dist: Infinity };
+    const cx = e.clientX;
+    for(let i=0;i<items.length;i++){
+      const r = items[i].getBoundingClientRect();
+      const centerX = r.left + r.width/2;
+      const centerY = r.top + r.height/2;
+      const dx = cx - centerX;
+      const dy = (e.clientY) - centerY;
+      const d2 = dx*dx + dy*dy;
+      if(d2 < nearest.dist){ nearest = { idx: i, dist: d2 }; }
+    }
+    const refRect = items[nearest.idx].getBoundingClientRect();
+    const targetIdx = (cx > (refRect.left + refRect.width/2)) ? nearest.idx + 1 : nearest.idx;
+    const reference = items[targetIdx] || null;
+    localDrag.grid.insertBefore(sub, reference);
+  }
+
+  function endDrag(e){
+    clearHold();
+    if(!localDrag) return;
+    const grid = localDrag.grid;
+    const children = Array.from(grid.children);
+    sub.style.position = ''; sub.style.left = ''; sub.style.top = ''; sub.style.width = ''; sub.style.height = ''; sub.style.zIndex = '';
+    sub.classList.remove('dragging');
+
+    if(group){
+      const newItems = [];
+      children.forEach(ch => {
+        if(ch._meta) newItems.push({ name: ch._meta.name, url: ch._meta.url, icon: ch._meta.icon });
+        else { const lname = ch.querySelector('.tile-label')?.textContent || ''; const limg = ch.querySelector('img')?.src || ''; const lurl = ch._meta && ch._meta.url ? ch._meta.url : ''; newItems.push({ name: lname, url: lurl, icon: limg }); }
+      });
+      // While in group move mode, do not save to storage; just update a temporary in-popup representation.
+      if(isGroupMoveMode){
+        // update groupPopupNode internal representation by rewriting group popup items only (not saving)
+        // We'll apply final setGroupItems on commit
+        // For simplicity, reflect new order into dataset for the group node (not persisted until commit)
+        try{
+          setGroupItems(group, newItems);
+          renderGroupPreview(group);
+        }catch(e){}
+      } else {
+        setGroupItems(group, newItems);
+        renderGroupPreview(group);
+        saveAll();
+      }
+    }
+    localDrag = null;
+  }
+
+  function onPointerDown(e){
+    if(!(isMoveMode || isGroupMoveMode)) return;
+    e.preventDefault();
+    clearHold();
+    hold = setTimeout(()=> startDrag(e.clientX, e.clientY), 120);
+    window.addEventListener('pointermove', onPointerMove, {passive:false});
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }
+  function onPointerUp(e){ clearHold(); endDrag(e); window.removeEventListener('pointermove', onPointerMove); window.removeEventListener('pointerup', onPointerUp); window.removeEventListener('pointercancel', onPointerUp); }
+
+  function onMouseDown(e){ if(!(isMoveMode || isGroupMoveMode)) return; e.preventDefault(); clearHold(); hold = setTimeout(()=> startDrag(e.clientX, e.clientY), 120); function mm(ev){ onPointerMove(ev); } function mu(ev){ clearHold(); endDrag(ev); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); } window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu); }
+  function onTouchStart(e){ if(!(isMoveMode || isGroupMoveMode)) return; clearHold(); const t = e.touches[0]; hold = setTimeout(()=> startDrag(t.clientX, t.clientY), 120); }
+  function onTouchMove(e){ if(!localDrag) return; onPointerMove(e.touches[0]); e.preventDefault(); }
+  function onTouchEnd(e){ clearHold(); endDrag(e); }
+
+  sub._subDragHandlers = { handle, onPointerDown, onMouseDown, onTouchStart };
+
+  if(window.PointerEvent){
+    handle.addEventListener('pointerdown', onPointerDown);
+  } else {
+    handle.addEventListener('mousedown', onMouseDown);
+    handle.addEventListener('touchstart', onTouchStart, {passive:false});
+    handle.addEventListener('touchmove', onTouchMove, {passive:false});
+    handle.addEventListener('touchend', onTouchEnd, {passive:true});
+  }
+}
+
+function disableDragForSubtile(sub){
+  if(!sub) return;
+  const h = sub._subDragHandlers; if(!h) return;
+  try{
+    if(window.PointerEvent){
+      h.handle.removeEventListener('pointerdown', h.onPointerDown);
+    } else {
+      h.handle.removeEventListener('mousedown', h.onMouseDown);
+      h.handle.removeEventListener('touchstart', h.onTouchStart);
+    }
+  }catch(e){}
+  // restore touchAction to default so scroll works
+  try{ const handle = sub.querySelector('.tile-button') || sub; if(handle) handle.style.touchAction = ''; }catch(e){}
+  sub._subDragHandlers = null;
+}
+
+/* Возвращает индекс плитки в потоке */
+function getFlowIndex(tile){
+  const list = Array.from(tiles.querySelectorAll('.tile')).filter(n => n !== addTile);
+  return list.indexOf(tile);
+}
+
+/* rebuild/commit */
+function rebuildFromSnapshot(snapshot){
+  const existing = Array.from(tiles.querySelectorAll('.tile'));
+  existing.forEach(n => { if(n !== addTile) n.remove(); });
+  snapshot.forEach(s => { if(s && s.name && s.url) createTile(s.name, s.url, s.icon || ''); else if(s && s.type==='group'){ const g = createGroup(s.name || 'Группа'); setGroupItems(g, s.items || []); renderGroupPreview(g); } });
+}
+
+function commitPositionsAndSave(){
+  const nodes = Array.from(tiles.querySelectorAll('.tile')).filter(n => n !== addTile);
+  const arr = nodes.map(n => { if(n._isGroup) return { type:'group', name: n._groupName || '', items: (getGroupItems(n)||[]).map(it=>({ name: it.name, url: it.url, icon: it.icon })) }; else return ({ type:'tile', name: n.querySelector('.tile-label')?.textContent || '', url: n._url || '', icon: n._icon || '' }); });
+  // очищаем и воссоздаём по порядку
+  const existing = Array.from(tiles.querySelectorAll('.tile'));
+  existing.forEach(n => { if(n !== addTile) n.remove(); });
+  arr.forEach(item => { if(item.type==='tile') createTile(item.name, item.url, item.icon || ''); else if(item.type==='group'){ const g = createGroup(item.name); setGroupItems(g, item.items || []); renderGroupPreview(g); } });
+  saveAll();
+}
+
+/* move-controls */
+function createMoveControls(){
+  if(moveControls) return;
+  moveControls = document.createElement('div');
+  moveControls.className = 'move-controls';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn cancel';
+  cancelBtn.textContent = 'Отмена';
+  cancelBtn.addEventListener('click', ()=>{ exitMoveMode(false); });
+
+  const okBtnLocal = document.createElement('button');
+  okBtnLocal.className = 'btn ok';
+  okBtnLocal.textContent = 'ОК';
+  okBtnLocal.addEventListener('click', ()=>{ exitMoveMode(true); });
+
+  // NEW: delete all button for main move mode
+  const deleteAllBtnMain = document.createElement('button');
+  deleteAllBtnMain.className = 'btn cancel';
+  deleteAllBtnMain.textContent = 'Удалить все';
+  deleteAllBtnMain.title = 'Удалить все ярлыки на странице (до подтверждения ОК можно отменить)';
+  deleteAllBtnMain.addEventListener('click', ()=>{
+    if(!confirm('Удалить все ярлыки на странице? (Изменение можно отменить кнопкой "Отмена")')) return;
+    // record deleted items for potential restore/cancellation
+    const nodes = Array.from(tiles.querySelectorAll('.tile')).filter(n => n !== addTile);
+    // store full snapshot in deletedDuringMove for UI trace (not strictly required because rebuildFromSnapshot uses snapshotBeforeMove)
+    deletedDuringMove = nodes.map((n, idx) => ({ name: n.querySelector('.tile-label')?.textContent || '', url: n._url || '', index: getFlowIndex(n) }));
+    // remove tiles from DOM
+    nodes.forEach(n => n.remove());
+    buildFlowOrder();
+    updateFlowPositions(true);
+  });
+
+  // Note: removed global "Удалить все" from main move controls to avoid accidental destructive action
+  moveControls.appendChild(cancelBtn);
+  moveControls.appendChild(okBtnLocal);
+  // append delete all to the right of OK as requested
+  moveControls.appendChild(deleteAllBtnMain);
+
+  document.body.appendChild(moveControls);
+  moveControls.style.display = 'flex';
+}
+
+function destroyMoveControls(){
+  if(!moveControls) return;
+  moveControls.remove();
+  moveControls = null;
+}
+
+/* ===== Group move mode implementation ===== */
+function takeGroupSnapshot(group){
+  if(!group) return null;
+  return (Array.isArray(getGroupItems(group)) ? getGroupItems(group).map(it => Object.assign({}, it)) : []);
+}
+function createGroupMoveControls(){
+  if(groupMoveControls) return;
+  groupMoveControls = document.createElement('div'); groupMoveControls.className = 'move-controls';
+  const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn cancel'; cancelBtn.textContent = 'Отмена'; cancelBtn.addEventListener('click', ()=>{ exitGroupMoveMode(false); });
+  const okBtnLocal = document.createElement('button'); okBtnLocal.className = 'btn ok'; okBtnLocal.textContent = 'ОК'; okBtnLocal.addEventListener('click', ()=>{ exitGroupMoveMode(true); });
+  // delete all for group (temporary, until commit)
+  const deleteAllBtn = document.createElement('button'); deleteAllBtn.className = 'btn cancel'; deleteAllBtn.textContent = 'Удалить все'; deleteAllBtn.title = 'Удалить все элементы группы (временно, можно отменить)';
+  deleteAllBtn.addEventListener('click', ()=>{
+    if(!groupMoveTarget) return;
+    if(!confirm('Удалить все элементы в группе? (Изменение будет применено только после нажатия ОК)')) return;
+    // record deleted items for possible restore
+    const grid = groupPopupNode && groupPopupNode.querySelector('.grid');
+    // capture existing children as deleted snapshot for possible undo
+    if(grid){
+      const children = Array.from(grid.children);
+      groupMoveDeleted = children.map((ch, idx) => ({ index: idx, meta: ch._meta ? Object.assign({}, ch._meta) : null }));
+      // remove children from DOM
+      children.forEach(c => c.remove());
+    } else {
+      // popup not open — still record current items
+      const items = Array.isArray(getGroupItems(groupMoveTarget)) ? getGroupItems(groupMoveTarget).slice() : [];
+      groupMoveDeleted = items.map((it, idx) => ({ index: idx, meta: it ? Object.assign({}, it) : null }));
+    }
+    // Clear group's dataset and internal container immediately (temporary until commit)
+    try{
+      setGroupItems(groupMoveTarget, []);
+      if(groupMoveTarget._container){
+        while(groupMoveTarget._container.firstChild) groupMoveTarget._container.removeChild(groupMoveTarget._container.firstChild);
+      }
+      // update preview & popup (temporary)
+      renderGroupPreview(groupMoveTarget);
+      if(groupPopupNode){
+        renderGroupPopupContent(groupMoveTarget);
+      }
+    }catch(e){
+      console.error('group deleteAll error', e);
+      alert('Ошибка при удалении всех элементов группы: ' + (e && e.message ? e.message : 'ошибка'));
+    }
+  });
+
+  groupMoveControls.appendChild(cancelBtn);
+  groupMoveControls.appendChild(deleteAllBtn);
+  groupMoveControls.appendChild(okBtnLocal);
+
+  // If popup open, attach controls under popup (outside), so they are visible and don't scroll.
+  if(groupPopupNode){
+    // hide internal close button inside popup while move controls are visible
+    try{
+      const internalClose = groupPopupNode.querySelector('.popup-close');
+      if(internalClose) internalClose.style.display = 'none';
+    }catch(e){}
+
+    groupMoveControls.style.position = 'fixed';
+    groupMoveControls.style.zIndex = 2200;
+    groupMoveControls.style.display = 'flex';
+    document.body.appendChild(groupMoveControls);
+
+    // position under popup
+    function reposition(){
+      if(!groupPopupNode || !groupMoveControls) return;
+      const rect = groupPopupNode.getBoundingClientRect();
+      const left = Math.max(8, rect.left + 12);
+      const top = Math.min(window.innerHeight - 8, rect.bottom + 12);
+      groupMoveControls.style.left = left + 'px';
+      groupMoveControls.style.top = top + 'px';
+      // if external close exists, reposition it to be right of controls
+      if(externalGroupCloseBtn && externalGroupCloseRepositionHandler) externalGroupCloseRepositionHandler();
+    }
+    reposition();
+    groupMoveControlsRepositionHandler = reposition;
+    window.addEventListener('resize', groupMoveControlsRepositionHandler);
+    window.addEventListener('scroll', groupMoveControlsRepositionHandler, {passive:true});
+  } else {
+    // fallback to body (should not happen in normal flow)
+    document.body.appendChild(groupMoveControls);
+    groupMoveControls.style.display = 'flex';
+  }
+}
+function destroyGroupMoveControls(){ if(!groupMoveControls) return; try{
+    // restore internal close if existed
+    if(groupPopupNode){
+      const internalClose = groupPopupNode.querySelector('.popup-close');
+      if(internalClose) internalClose.style.display = '';
+    }
+    groupMoveControls.remove();
+    groupMoveControls = null;
+    if(groupMoveControlsRepositionHandler){
+      window.removeEventListener('resize', groupMoveControlsRepositionHandler);
+      window.removeEventListener('scroll', groupMoveControlsRepositionHandler);
+      groupMoveControlsRepositionHandler = null;
+    }
+  }catch(e){} }
+
+/* enter/exit group move */
+function enterGroupMoveMode(groupNode){
+  if(isGroupMoveMode) return;
+  if(!groupNode || !groupPopupNode || currentGroupOpen !== groupNode) return;
+  isGroupMoveMode = true;
+  groupMoveTarget = groupNode;
+  groupMoveSnapshot = takeGroupSnapshot(groupNode);
+  groupMoveDeleted = [];
+  const subs = Array.from(groupPopupNode.querySelectorAll('.subtile'));
+  subs.forEach(s=>{
+    try{ addDeleteXToSub(s, groupNode); }catch(e){}
+    try{ enableDragForSubtile(s, groupNode); }catch(e){}
+  });
+  createGroupMoveControls();
+}
+
+function exitGroupMoveMode(commit = true){
+  if(!isGroupMoveMode) return;
+  if(groupPopupNode && groupMoveTarget){
+    const subs = Array.from(groupPopupNode.querySelector('.subtile'));
+    // remove handlers from subs
+    subs.forEach(s=>{
+      try{ removeDeleteXFromSub(s); }catch(e){}
+      try{ disableDragForSubtile(s); }catch(e){}
+    });
+
+    if(commit){
+      // Commit: take current ordering from popup grid (children) and write into group storage and save.
+      const children = Array.from(groupPopupNode.querySelector('.grid').children);
+      const newItems = [];
+      children.forEach(ch=>{
+        if(ch._meta) newItems.push({ name: ch._meta.name, url: ch._meta.url, icon: ch._meta.icon });
+        else { const lname = ch.querySelector('.tile-label')?.textContent || ''; const limg = ch.querySelector('img')?.src || ''; const lurl = ch._meta && ch._meta.url ? ch._meta.url : ''; newItems.push({ name: lname, url: lurl, icon: limg }); }
+      });
+      // Also ensure internal container cleared/recreated to match newItems
+      setGroupItems(groupMoveTarget, newItems);
+      // recreate internal container DOM nodes for group's container
+      if(groupMoveTarget._container){
+        while(groupMoveTarget._container.firstChild) groupMoveTarget._container.removeChild(groupMoveTarget._container.firstChild);
+        newItems.forEach(it => {
+          try{
+            const nnode = document.createElement('div'); // lightweight placeholder if needed
+            // We keep storage in dataset; main UI uses popup for edit, so internal DOM can be simple
+            // No need to append heavy DOM here
+          }catch(e){}
+        });
+      }
+      renderGroupPreview(groupMoveTarget);
+      saveAll();
+    } else {
+      // Cancel: restore from snapshot without closing popup; this avoids losing popup position and reflows.
+      setGroupItems(groupMoveTarget, Array.isArray(groupMoveSnapshot) ? groupMoveSnapshot.slice() : []);
+      renderGroupPopupContent(groupMoveTarget);
+      renderGroupPreview(groupMoveTarget);
+      // clear any temporary deleted list
+      groupMoveDeleted = [];
+    }
+  }
+  destroyGroupMoveControls();
+  groupMoveSnapshot = null; groupMoveTarget = null; isGroupMoveMode = false;
+}
+
+/* ===== Dragging: pointer + touch/mouse fallback for main tiles ===== */
+
+function enableDragForTile(tile){
+  const handle = tile.querySelector('.tile-button') || tile;
+  // default touch-action set in CSS to pan-y; set none only when enabling drag
+  handle.style.touchAction = 'none';
+
+  function clearHoldTimer(){ if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; } }
+
+  function startDragFromEvent(clientX, clientY, pointerId){
+    const contRect = tiles.getBoundingClientRect();
+    activeDrag = {
+      tile,
+      offsetX: clientX - (tile.getBoundingClientRect().left),
+      offsetY: clientY - (tile.getBoundingClientRect().top),
+      pointerId: pointerId || null
+    };
+    try{ tile.setPointerCapture && tile.setPointerCapture(pointerId); }catch(err){}
+    tile.classList.add('dragging');
+    if(!flowOrder.includes(tile)) buildFlowOrder();
+  }
+
+  function onPointerDown(e){
+    if(!isMoveMode) return;
+    e.preventDefault();
+    clearHoldTimer();
+    holdTimer = setTimeout(()=> startDragFromEvent(e.clientX, e.clientY, e.pointerId), 120);
+    window.addEventListener('pointermove', onPointerMove, {passive:false});
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+  }
+
+  function onPointerMove(e){
+    if(!activeDrag || activeDrag.tile !== tile) return;
+    if(e.pointerId !== undefined && activeDrag.pointerId && e.pointerId !== activeDrag.pointerId) return;
+    e.preventDefault();
+    const contRect = tiles.getBoundingClientRect();
+    const newLeft = e.clientX - contRect.left - activeDrag.offsetX;
+    const newTop = e.clientY - contRect.top - activeDrag.offsetY;
+    tile.style.left = Math.max(0, Math.round(newLeft)) + 'px';
+    tile.style.top = Math.max(0, Math.round(newTop)) + 'px';
+
+    const idx = getTargetIndexFromPoint(e.clientX, e.clientY, tile);
+    if(idx !== placeholderIndex){
+      placeholderIndex = idx;
+      applyFlowReorderWhenDragging(tile, idx);
+    }
+  }
+
+  function onPointerUp(e){
+    clearHoldTimer();
+    if(activeDrag && activeDrag.tile === tile){
+      const clientX = e && e.clientX !== undefined ? e.clientX : (tile.getBoundingClientRect().left + tile.offsetWidth/2);
+      const clientY = e && e.clientY !== undefined ? e.clientY : (tile.getBoundingClientRect().top + tile.offsetHeight/2);
+      const idx = getTargetIndexFromPoint(clientX, clientY, tile);
+      applyFlowReorderWhenDragging(tile, idx);
+
+      try{ tile.releasePointerCapture && tile.releasePointerCapture(activeDrag.pointerId); }catch(err){}
+      tile.classList.remove('dragging');
+      placeholderIndex = -1;
+      tiles.querySelectorAll('.tile').forEach(n => n.classList.remove('drop-target'));
+      updateFlowPositions(true);
+      activeDrag = null;
+    }
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointercancel', onPointerUp);
+  }
+
+  // mouse/touch fallback
+  function onMouseDown(e){
+    if(!isMoveMode) return;
+    e.preventDefault();
+    clearHoldTimer();
+    holdTimer = setTimeout(()=>{ startDragFromEvent(e.clientX, e.clientY, null); }, 120);
+    function mm(ev){
+      if(activeDrag && activeDrag.tile===tile){
+        const contRect = tiles.getBoundingClientRect();
+        const newLeft = ev.clientX - contRect.left - activeDrag.offsetX;
+        const newTop = ev.clientY - contRect.top - activeDrag.offsetY;
+        tile.style.left = Math.max(0, Math.round(newLeft)) + 'px';
+        tile.style.top = Math.max(0, Math.round(newTop)) + 'px';
+        const idx = getTargetIndexFromPoint(ev.clientX, ev.clientY, tile);
+        if(idx !== placeholderIndex){
+          placeholderIndex = idx;
+          applyFlowReorderWhenDragging(tile, idx);
+        }
+      }
+    }
+    function mu(ev){
+      clearHoldTimer();
+      if(activeDrag && activeDrag.tile===tile){
+        const idx = getTargetIndexFromPoint(ev.clientX, ev.clientY, tile);
+        applyFlowReorderWhenDragging(tile, idx);
+
+        tile.classList.remove('dragging');
+        placeholderIndex = -1;
+        tiles.querySelectorAll('.tile').forEach(n => n.classList.remove('drop-target'));
+        updateFlowPositions(true);
+        activeDrag=null;
+      }
+      window.removeEventListener('mousemove', mm);
+      window.removeEventListener('mouseup', mu);
+    }
+    window.addEventListener('mousemove', mm);
+    window.addEventListener('mouseup', mu);
+  }
+
+  function onTouchStart(e){
+    if(!isMoveMode) return;
+    clearHoldTimer();
+    const t = e.touches[0];
+    holdTimer = setTimeout(()=>{ startDragFromEvent(t.clientX, t.clientY, null); }, 120);
+  }
+
+  function onTouchMove(e){
+    if(!activeDrag) return;
+    const t = e.touches[0];
+    const contRect = tiles.getBoundingClientRect();
+    const newLeft = t.clientX - contRect.left - activeDrag.offsetX;
+    const newTop = t.clientY - contRect.top - activeDrag.offsetY;
+    tile.style.left = Math.max(0, Math.round(newLeft)) + 'px';
+    tile.style.top = Math.max(0, Math.round(newTop)) + 'px';
+    const idx = getTargetIndexFromPoint(t.clientX, t.clientY, tile);
+    if(idx !== placeholderIndex){
+      placeholderIndex = idx;
+      applyFlowReorderWhenDragging(tile, idx);
+    }
+    e.preventDefault();
+  }
+
+  function onTouchEnd(e){
+    clearHoldTimer();
+    if(activeDrag){
+      let clientX = tile.getBoundingClientRect().left + tile.offsetWidth/2;
+      let clientY = tile.getBoundingClientRect().top + tile.offsetHeight/2;
+      if(e && e.changedTouches && e.changedTouches[0]){
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+      }
+      const idx = getTargetIndexFromPoint(clientX, clientY, tile);
+      applyFlowReorderWhenDragging(tile, idx);
+
+      tile.classList.remove('dragging');
+      placeholderIndex = -1;
+      tiles.querySelectorAll('.tile').forEach(n => n.classList.remove('drop-target'));
+      updateFlowPositions(true);
+      activeDrag=null;
+    }
+  }
+
+  tile._dragHandlers = { onPointerDown, onPointerMove, onPointerUp, onMouseDown, onTouchStart, onTouchMove, onTouchEnd };
+
+  if(window.PointerEvent){
+    handle.addEventListener('pointerdown', onPointerDown);
+  } else {
+    handle.addEventListener('mousedown', onMouseDown);
+    handle.addEventListener('touchstart', onTouchStart, {passive:false});
+    handle.addEventListener('touchmove', onTouchMove, {passive:false});
+    handle.addEventListener('touchend', onTouchEnd, {passive:true});
+  }
+
+  handle.addEventListener('click', function(e){ if(isMoveMode){ e.stopPropagation(); e.preventDefault(); } });
+}
+
+function disableDragForTile(tile){
+  const handle = tile.querySelector('.tile-button') || tile;
+  const h = tile._dragHandlers;
+  if(!h) return;
+  try{
+    if(window.PointerEvent){
+      handle.removeEventListener('pointerdown', h.onPointerDown);
+      window.removeEventListener('pointermove', h.onPointerMove);
+      window.removeEventListener('pointerup', h.onPointerUp);
+      window.removeEventListener('pointercancel', h.onPointerUp);
+    } else {
+      handle.removeEventListener('mousedown', h.onMouseDown);
+      handle.removeEventListener('touchstart', h.onTouchStart);
+      handle.removeEventListener('touchmove', h.onTouchMove);
+      handle.removeEventListener('touchend', h.onTouchEnd);
+    }
+  } catch(e){}
+  // restore default touch-action so scrolling works
+  try{ handle.style.touchAction = ''; }catch(e){}
+  tile._dragHandlers = null;
+}
+
+function clearAllHoldTimers(){ if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; } }
+
+/* ===== Settings menu implementation ===== */
+
+let settingsMenuNode = null;
+function closeSettingsMenu(){
+  const root = document.getElementById('contextRoot');
+  if(settingsMenuNode){
+    settingsMenuNode.removeEventListener('click', settingsMenuNode._stopPropagationFn || (()=>{}));
+    settingsMenuNode.remove();
+    settingsMenuNode = null;
+    root.style.pointerEvents = 'none';
+  }
+  document.removeEventListener('click', onDocClickCloseSettings);
+  settingsFab.setAttribute('aria-expanded','false');
+}
+function onDocClickCloseSettings(e){ if(!(settingsMenuNode && settingsMenuNode.contains(e.target)) && !settingsFab.contains(e.target)) closeSettingsMenu(); }
+
+/* ===== New: export links to .html file ===== */
+async function exportLinksToHtmlFile(){
+  try{
+    const sections = [];
+    const nodes = Array.from(tiles.querySelectorAll('.tile')).filter(n => n !== addTile);
+    // Build HTML content with groups and standalone tiles
+    nodes.forEach(n => {
+      if(n._isGroup){
+        const items = getGroupItems(n) || [];
+        const groupHtml = `<h2>${escapeHtml(n._groupName || 'Группа')}</h2>\n<ul>\n` + items.map(it => `<li><a href="${escapeHtmlAttr(it.url || '')}" target="_blank" rel="noopener">${escapeHtml(it.name || it.url || '')}</a></li>`).join('\n') + `\n</ul>\n`;
+        sections.push(groupHtml);
+      } else {
+        sections.push(`<p><a href="${escapeHtmlAttr(n._url || '')}" target="_blank" rel="noopener">${escapeHtml(n.querySelector('.tile-label')?.textContent || n._url || '')}</a></p>`);
+      }
+    });
+    const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Exported links</title></head>
+<body>
+${sections.join('\n')}
+</body>
+</html>`;
+    const filename = 'links_export_' + (new Date()).toISOString().slice(0,19).replace(/:/g,'-') + '.html';
+
+    if(window.showSaveFilePicker){
+      try{
+        const handle = await window.showSaveFilePicker({ suggestedName: filename, types:[{ description:'HTML', accept:{ 'text/html':['.html'] } }] });
+        const writable = await handle.createWritable();
+        await writable.write(new Blob([html], { type: 'text/html' }));
+        await writable.close();
+        alert('Экспорт (.html) завершён.');
+        return;
+      }catch(e){}
+    }
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Экспорт ссылок: файл загружен через браузер.');
+  }catch(e){
+    console.error('exportLinksToHtmlFile', e);
+    alert('Ошибка при экспорте (.html): ' + (e && e.message ? e.message : 'ошибка'));
+  }
+}
+
+/* ===== Export / Import shortcuts (JSON) - helper kept but removed from settings menu per request ===== */
+async function exportShortcutsToFile(){
+  try{
+    const arr=[];
+    tiles.querySelectorAll('.tile').forEach(n => { if(n===addTile) return; if(n._isGroup){ arr.push({ type:'group', name: n._groupName || '', items: (getGroupItems(n)||[]).map(it=>({ name: it.name, url: it.url, icon: it.icon })) }); } else { arr.push({ type:'tile', name: n.querySelector('.tile-label')?.textContent || '', url: n._url || '', icon: n._icon || '' }); } });
+    const json = JSON.stringify(arr, null, 2);
+    const filename = 'shortcuts_export_' + (new Date()).toISOString().slice(0,19).replace(/:/g,'-') + '.json';
+
+    if(window.showSaveFilePicker){
+      const opts = {
+        suggestedName: filename,
+        types: [{
+          description: 'JSON',
+          accept: {'application/json': ['.json']}
+        }]
+      };
+      try{
+        const handle = await window.showSaveFilePicker(opts);
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        alert('Экспорт завершён.');
+        return;
+      }catch(e){}
+    }
+
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    alert('Экспорт: файл загружен через браузер.');
+  }catch(e){
+    console.error('exportShortcutsToFile', e);
+    alert('Ошибка при экспорте: ' + (e && e.message ? e.message : 'ошибка'));
+  }
+}
+
+async function importShortcutsFromFile(){
+  try{
+    let content = null;
+    if(window.showOpenFilePicker){
+      try{
+        const handles = await window.showOpenFilePicker({
+          types: [{
+            description: 'JSON',
+            accept: {'application/json': ['.json']}
+          }],
+          multiple:false
+        });
+        if(handles && handles[0]){
+          const file = await handles[0].getFile();
+          content = await file.text();
+        }
+      }catch(e){}
+    }
+
+    if(!content){
+      jsonImportInput.value = '';
+      jsonImportInput.click();
+      const p = new Promise((res, rej)=>{
+        jsonImportInput.onchange = async ()=>{
+          const f = jsonImportInput.files && jsonImportInput.files[0];
+          if(!f){ res(null); return; }
+          try{ const t = await f.text(); res(t); }catch(er){ rej(er); }
+        };
+      });
+      content = await p;
+    }
+
+    if(!content) return;
+    let arr = null;
+    try{ arr = JSON.parse(content); }catch(e){ alert('Файл не является корректным JSON.'); return; }
+    if(!Array.isArray(arr)) { alert('Ожидался массив объектов {name,url,icon}.'); return; }
+
+    const ok = confirm('Импорт заменит текущие ярлыки. Продолжить?');
+    if(!ok) return;
+
+    const existing = Array.from(tiles.querySelectorAll('.tile'));
+    existing.forEach(n => { if(n !== addTile) n.remove(); });
+    arr.forEach(s => { if(s && s.name && s.url) createTile(s.name, s.url, s.icon || ''); else if(s && s.type==='group'){ const g = createGroup(s.name||'Группа'); setGroupItems(g, s.items || []); renderGroupPreview(g); } });
+
+    saveAll();
+    alert('Импорт завершён.');
+  }catch(e){
+    console.error('importShortcutsFromFile', e);
+    alert('Ошибка при импорте: ' + (e && e.message ? e.message : 'ошибка'));
+  }
+}
+
+/* ===== New: Import URLs from .html/.txt into main or specific group =====
+   - If groupNode is null => append to main tiles
+   - If groupNode provided => append into that group.
+   Parsing:
+     - If file is HTML: use DOMParser to collect <a href="...">text</a>
+     - If plain text: find urls via regex per-line
+*/
+
+/* ===== Надёжный последовательный импорт (замени функцию importUrlsFromFile полностью) ===== */
+async function importUrlsFromFile(groupNode = null){
+  function normalizeHref(href){
+    if(!href) return '';
+    try{ return (new URL(href, document.baseURI)).href; }catch(e){ return String(href).trim(); }
+  }
+
+  try{
+    let content = null;
+    if(window.showOpenFilePicker){
+      try{
+        const handles = await window.showOpenFilePicker({
+          types: [{ description: 'HTML or TXT', accept: { 'text/html': ['.html','.htm'], 'text/plain': ['.txt'] } }],
+          multiple:false
+        });
+        if(handles && handles[0]){
+          const file = await handles[0].getFile();
+          content = await file.text();
+        }
+      }catch(e){}
+    }
+    if(!content){
+      htmlImportInput.value = '';
+      htmlImportInput.click();
+      content = await new Promise((res, rej)=>{
+        htmlImportInput.onchange = async ()=>{
+          const f = htmlImportInput.files && htmlImportInput.files[0];
+          if(!f){ res(null); return; }
+          try{ const t = await f.text(); res(t); }catch(er){ rej(er); }
+        };
+      });
+    }
+    if(!content) return;
+    const trimmed = content.trim();
+    // если HTML — парсим
+    if(/<[a-z][\s\S]*>/i.test(trimmed)){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+
+      const parsedUngrouped = []; // main page links
+      const parsedGroups = [];    // {name, items:[{name,url}]}
+
+      // проходим ПОСЛЕДОВАТЕЛЬНО по дочерним элементам body — это даёт корректный порядок
+      const children = Array.from(doc.body.children || []);
+      for(let i = 0; i < children.length; i++){
+        const el = children[i];
+
+        // 1) explicit group section
+        if(el.tagName.toLowerCase() === 'section' && el.classList.contains('group')){
+          const name = el.getAttribute('data-name') || (el.querySelector('h1,h2,h3,h4,h5,h6') && el.querySelector('h1,h2,h3,h4,h5,h6').textContent.trim()) || 'Группа';
+          const anchors = Array.from(el.querySelectorAll('a[href]')).map(a => ({ name: (a.textContent||a.getAttribute('title')||a.href).trim(), url: normalizeHref(a.getAttribute('href')) }));
+          parsedGroups.push({ name, items: anchors });
+          continue;
+        }
+
+        // 2) explicit ungrouped section
+        if(el.tagName.toLowerCase() === 'section' && el.classList.contains('ungrouped')){
+          const anchors = Array.from(el.querySelectorAll('a[href]')).map(a => ({ name: (a.textContent||a.href).trim(), url: normalizeHref(a.getAttribute('href')) }));
+          anchors.forEach(a => parsedUngrouped.push(a));
+          continue;
+        }
+
+        // 3) heading + following ul/ol => group
+        if(/^H[1-6]$/.test(el.tagName)){
+          const groupName = el.textContent.trim() || 'Группа';
+          // посмотрим следующий элемент(ы) — если ul/ol, соберём
+          let j = i + 1;
+          const items = [];
+          while(j < children.length && !/^H[1-6]$/.test(children[j].tagName)){
+            const cand = children[j];
+            if(cand.tagName === 'UL' || cand.tagName === 'OL'){
+              Array.from(cand.querySelectorAll('a[href]')).forEach(a => items.push({ name: (a.textContent||a.href).trim(), url: normalizeHref(a.getAttribute('href')) }));
+            } else {
+              // также допускаем ссылки внутри параграфов и т.п.
+              Array.from(cand.querySelectorAll && cand.querySelectorAll('a[href]') || []).forEach(a=> items.push({ name:(a.textContent||a.href).trim(), url: normalizeHref(a.getAttribute('href')) }));
+            }
+            j++;
+          }
+          if(items.length){
+            parsedGroups.push({ name: groupName, items });
+            // продвинем i до j-1 (следующая итерация начнёт с j)
+            i = j - 1;
+            continue;
+          }
+        }
+
+        // 4) для любых других элементов — возьмём все <a> внутри и добавим в ungrouped
+        Array.from(el.querySelectorAll && el.querySelectorAll('a[href]') || []).forEach(a=>{
+          parsedUngrouped.push({ name:(a.textContent||a.href).trim(), url: normalizeHref(a.getAttribute('href')) });
+        });
+      } // end for children
+
+      console.info('IMPORT PARSE:', 'groups=', parsedGroups.length, 'ungrouped=', parsedUngrouped.length);
+
+      // если импортируем в конкретную группу — объединяем всё и кладём в неё
+      if(groupNode){
+        const combined = parsedUngrouped.concat(parsedGroups.flatMap(g => g.items));
+        if(combined.length === 0){ alert('Не найдено ссылок для импорта в группу.'); return; }
+        if(!confirm('Импортировать ' + combined.length + ' ссылок в группу "'+ (groupNode._groupName||'Группа') + '"?')) return;
+        for(const it of combined){
+          try{
+            let url = it.url || '';
+            if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = (url.startsWith('www.') ? 'https://' + url : url);
+            createTile(it.name || url, url, (function(){ try{ return 'https://www.google.com/s2/favicons?sz=128&domain=' + (new URL(url)).hostname; }catch(e){ return ''; } })(), groupNode);
+          }catch(e){}
+        }
+        if(currentGroupOpen === groupNode && groupPopupNode){ renderGroupPopupContent(groupNode); renderGroupPreview(groupNode); }
+        saveAll();
+        alert('Импорт в группу завершён: добавлено ' + combined.length + ' элементов.');
+        return;
+      }
+
+      // импорт на страницу: спросим заменить или добавить
+      const replace = confirm('Найдено ' + parsedGroups.length + ' групп и ' + parsedUngrouped.length + ' одиночных ссылок.\nOK — заменить текущие, Cancel — добавить.');
+      if(replace){
+        const existing = Array.from(tiles.querySelectorAll('.tile'));
+        existing.forEach(n => { if(n !== addTile) n.remove(); });
+      }
+
+      // создаём сначала одиночные плитки
+      parsedUngrouped.forEach(u=>{
+        try{
+          let url = u.url || '';
+          if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = (url.startsWith('www.') ? 'https://' + url : url);
+          createTile(u.name || url, url, (function(){ try{ return 'https://www.google.com/s2/favicons?sz=128&domain=' + (new URL(url)).hostname; }catch(e){ return ''; } })());
+        }catch(e){}
+      });
+
+      // потом создаём группы
+      parsedGroups.forEach(g=>{
+        try{
+          const grp = createGroup(g.name || 'Группа');
+          const items = (g.items || []).map(it=>{
+            let url = it.url || '';
+            if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = (url.startsWith('www.') ? 'https://' + url : url);
+            return { name: it.name || url, url };
+          });
+          const itemsWithIcons = items.map(it => ({ name: it.name, url: it.url, icon: (function(){ try{ return 'https://www.google.com/s2/favicons?sz=128&domain=' + (new URL(it.url)).hostname; }catch(e){ return ''; } })() }));
+          setGroupItems(grp, itemsWithIcons);
+          renderGroupPreview(grp);
+        }catch(e){}
+      });
+
+      saveAll();
+      alert('Импорт завершён: ' + parsedGroups.length + ' групп и ' + parsedUngrouped.length + ' одиночных ссылок обработано.');
+      return;
+    }
+
+    // fallback: plain text (как раньше)
+    const urlRegex = /((https?:\/\/|www\.)[^\s"'<>\)\]]+)/ig;
+    const lines = content.split(/\r?\n/);
+    const list = [];
+    lines.forEach(ln=>{
+      const m = ln.match(urlRegex);
+      if(m){
+        m.forEach(u=>{
+          let url = u.trim();
+          if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = (url.startsWith('www.') ? 'https://' + url : 'https://' + url);
+          list.push({ name: url, url });
+        });
+      } else {
+        const t = ln.trim();
+        if(t && /\w+\.\w{2,}/.test(t)) {
+          let url = t;
+          if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = 'https://' + url;
+          list.push({ name: t, url });
+        }
+      }
+    });
+
+    if(list.length === 0){ alert('Не найдено ссылок в файле.'); return; }
+
+    if(groupNode){
+      if(!confirm('Импортировать ' + list.length + ' ссылок в группу "'+ (groupNode._groupName||'Группа') + '"?')) return;
+      for(const it of list){ try{ createTile(it.name, it.url, ('https://www.google.com/s2/favicons?sz=128&domain=' + (new URL(it.url)).hostname), groupNode); }catch(e){} }
+      if(currentGroupOpen === groupNode && groupPopupNode){ renderGroupPopupContent(groupNode); renderGroupPreview(groupNode); }
+      saveAll();
+      alert('Импорт завершён: добавлено ' + list.length + ' элементов.');
+      return;
+    }
+
+    if(!confirm('Импортировать ' + list.length + ' ссылок на страницу?')) return;
+    for(const it of list){ try{ createTile(it.name, it.url, ('https://www.google.com/s2/favicons?sz=128&domain=' + (new URL(it.url)).hostname)); }catch(e){} }
+    saveAll();
+    alert('Импорт завершён: добавлено ' + list.length + ' элементов.');
+  }catch(e){
+    console.error('importUrlsFromFile error (sequential):', e);
+    alert('Ошибка импорта: ' + (e && e.message ? e.message : 'ошибка'));
+  }
+}
+
+/* ===== Search visibility toggle ===== */
+
+function setSearchVisible(yes){
+  if(yes){
+    searchRow.style.display = '';
+  } else {
+    searchRow.style.display = 'none';
+  }
+  try{ localStorage.setItem(SEARCH_ENABLED_KEY, yes ? '1' : '0'); }catch(e){}
+}
+
+function loadSearchPref(){
+  try{
+    const v = localStorage.getItem(SEARCH_ENABLED_KEY);
+    const visible = (v === null || v === undefined) ? true : (v === '1');
+    setSearchVisible(visible);
+    return visible;
+  }catch(e){
+    setSearchVisible(true);
+    return true;
+  }
+}
+
+/* ===== Events wiring ===== */
+engineBtn.addEventListener('click', (ev)=>{ ev.stopPropagation(); if(engineMenuRoot.children.length) hideEngineMenu(); else showEngineMenu(); });
+okBtn.addEventListener('click', navigate);
+omnibox.addEventListener('keydown', (e)=>{ if(e.key==='Enter') navigate(); });
+addBtn.addEventListener('click', ()=> showAddModal(null));
+cancelAdd.addEventListener('click', hideAddModal);
+modalBackdrop.addEventListener('click', (ev)=>{
+  if(ev.target===modalBackdrop) hideAddModal();
+});
+
+/* Long-press on addBtn shows small menu with "Создать группа" */
+let addBtnHold = null;
+function showAddMenuAt(x,y){
+  contextRoot.innerHTML='';
+  const node = document.createElement('div'); node.className='menu'; node.style.pointerEvents='auto';
+  const b = document.createElement('button'); b.textContent='Создать группа';
+  b.addEventListener('click', ()=>{ const name = prompt('Название группы:', 'Новая группа'); if(name){ createGroup(name); } closeContextMenu(); });
+  node.appendChild(b);
+  contextRoot.appendChild(node);
+  node.style.left = x + 'px';
+  node.style.top = y + 'px';
+  const rect = node.getBoundingClientRect();
+  let left = x; let top = y;
+  if(left + rect.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rect.width - 8);
+  if(top + rect.height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - rect.height - 8);
+  node.style.left = left + 'px'; node.style.top = top + 'px';
+  contextRoot.style.pointerEvents='auto';
+  setTimeout(()=>document.addEventListener('click', onDocClickCloseContext),0);
+}
+
+addBtn.addEventListener('mousedown', (e)=>{ addBtnHold = setTimeout(()=>{ showAddMenuAt(e.clientX, e.clientY); }, 550); });
+addBtn.addEventListener('mouseup', ()=>{ if(addBtnHold){ clearTimeout(addBtnHold); addBtnHold=null; } });
+addBtn.addEventListener('mouseleave', ()=>{ if(addBtnHold){ clearTimeout(addBtnHold); addBtnHold=null; } });
+addBtn.addEventListener('touchstart', (e)=>{ addBtnHold = setTimeout(()=>{ const t = e.touches[0]; showAddMenuAt(t.clientX, t.clientY); }, 550); }, {passive:true});
+addBtn.addEventListener('touchend', ()=>{ if(addBtnHold){ clearTimeout(addBtnHold); addBtnHold=null; } });
+
+// Icon buttons in modal
+chooseIconBtn.addEventListener('click', (ev)=>{
+  ev.stopPropagation();
+  iconFileInput.value = '';
+  iconFileInput.click();
+});
+iconFileInput.addEventListener('change', async ()=>{
+  const f = iconFileInput.files && iconFileInput.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  const p = new Promise((res, rej)=>{
+    reader.onload = ()=>res(reader.result);
+    reader.onerror = ()=>rej(reader.error);
+  });
+  reader.readAsDataURL(f);
+  try{
+    const data = await p;
+    stagedIconData = data;
+    iconUrlInput.value = data;
+    renderIconPreview(data);
+  }catch(e){
+    alert('Не удалось загрузить иконку: ' + (e && e.message ? e.message : 'ошибка'));
+  }
+});
+removeIconBtn.addEventListener('click', (ev)=>{
+  ev.stopPropagation();
+  stagedIconData = '';
+  iconUrlInput.value = '';
+  renderIconPreview(null);
+});
+refreshIconBtn.addEventListener('click', (ev)=>{
+  ev.stopPropagation();
+  const site = siteUrl.value.trim();
+  if(!site){
+    alert('Укажи адрес сайта, чтобы подтянуть фавикон.');
+    return;
+  }
+  try{
+    let hostname = site;
+    if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(hostname)) hostname = 'https://' + hostname;
+    const p = new URL(hostname);
+    const fav = 'https://www.google.com/s2/favicons?sz=128&domain=' + p.hostname;
+    const testImg = document.createElement('img');
+    testImg.onload = ()=>{
+      stagedIconData = fav;
+      iconUrlInput.value = fav;
+      renderIconPreview(fav);
+    };
+    testImg.onerror = ()=>{
+      stagedIconData = '';
+      iconUrlInput.value = '';
+      renderIconPreview(null);
+      alert('Не удалось загрузить фавикон — используется иконка по умолчанию.');
+    };
+    testImg.src = fav;
+  }catch(e){
+    stagedIconData = '';
+    iconUrlInput.value = '';
+    renderIconPreview(null);
+    alert('Адрес сайта некорректен — используется иконка по умолчанию.');
+  }
+});
+
+// iconUrlInput direct edit -> update preview
+iconUrlInput.addEventListener('input', (e)=>{
+  const v = iconUrlInput.value.trim();
+  stagedIconData = v || null;
+  renderIconPreview(stagedIconData);
+});
+
+/* Modal to edit subtile inside group */
+function showEditGroupItemModal(subNode){
+  if(!subNode || !currentGroupOpen) return;
+  modalMode = 'groupItem';
+  currentEditGroupItem = { group: currentGroupOpen, subNode: subNode, index: null };
+  const grid = groupPopupNode && groupPopupNode.querySelector('.grid');
+  const idx = grid ? Array.from(grid.children).indexOf(subNode) : -1;
+  currentEditGroupItem.index = idx;
+  siteName.placeholder = 'Название';
+  siteUrl.placeholder = 'Адрес (например example.com)';
+  siteName.value = subNode._meta && subNode._meta.name ? subNode._meta.name : '';
+  siteUrl.value = subNode._meta && subNode._meta.url ? subNode._meta.url : '';
+  stagedIconData = subNode._meta && subNode._meta.icon ? subNode._meta.icon : '';
+  iconUrlInput.value = stagedIconData || '';
+  renderIconPreview(stagedIconData || null);
+  modalBackdrop.style.display='flex';
+  modalBackdrop.style.pointerEvents='auto';
+  modalBackdrop.setAttribute('aria-hidden','false');
+  setTimeout(()=>siteName.focus(),50);
+
+  saveAdd.onclick = ()=>{
+    const name = siteName.value.trim();
+    let url = siteUrl.value.trim();
+    if(!name || !url) return;
+    if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) url = 'https://' + url;
+    let iconToSave = stagedIconData || '';
+    try{ const p = new URL(url); if(!iconToSave) iconToSave = 'https://www.google.com/s2/favicons?sz=128&domain=' + p.hostname; }catch(e){}
+    const gi = currentEditGroupItem;
+    if(gi && gi.group && Array.isArray(getGroupItems(gi.group)) && gi.index>=0){
+      const items = getGroupItems(gi.group).slice();
+      items[gi.index] = { name, url, icon: iconToSave };
+      setGroupItems(gi.group, items);
+      gi.subNode._meta = gi.subNode._meta || {};
+      gi.subNode._meta.name = name;
+      gi.subNode._meta.url = url;
+      gi.subNode._meta.icon = iconToSave;
+      if(gi.subNode.querySelector('.tile-label')) gi.subNode.querySelector('.tile-label').textContent = name;
+      const im = gi.subNode.querySelector('img');
+      if(im) im.src = iconToSave || DEFAULT_ICON_DATA_URL;
+      renderGroupPreview(gi.group);
+      saveAll();
+    }
+    hideAddModal();
+  };
+}
+
+/* document click handler */
+document.addEventListener('click', ()=>{
+  if(modalBackdrop.style.display === 'flex') return;
+  hideEngineMenu();
+  closeContextMenu();
+});
+
+/* resize/scroll */
+window.addEventListener('resize', clearAllHoldTimers);
+window.addEventListener('scroll', clearAllHoldTimers);
+
+function onWindowResize(){
+  try{ updateFlowPositions(true); }catch(e){}
+  // if popup open, recompute center and size to keep it centered and square
+  if(groupPopupNode && currentGroupOpen){
+    const margin = 32;
+    const maxSide = Math.min(window.innerWidth - margin, window.innerHeight - margin);
+    const defaultSide = Math.min(360, maxSide);
+    const side = Math.max(240, defaultSide);
+    groupPopupNode.style.width = side + 'px';
+    groupPopupNode.style.height = side + 'px';
+    const left = Math.max(8, Math.round((window.innerWidth - side) / 2));
+    const top  = Math.max(8, Math.round((window.innerHeight - side) / 2));
+    groupPopupNode.style.left = left + 'px';
+    groupPopupNode.style.top = top + 'px';
+    // adjust grid row size and columns
+    const grid = groupPopupNode.querySelector('.grid');
+    if(grid){
+      const mainTile = computeMainTileSize();
+      grid.style.gridTemplateColumns = `repeat(3, ${mainTile}px)`;
+      grid.style.gridAutoRows = mainTile + 'px';
+      grid.style.gap = Math.max(8, Math.round(mainTile * 0.08)) + 'px';
+    }
+    // reposition group move controls if present
+    if(groupMoveControls && groupMoveControlsRepositionHandler) groupMoveControlsRepositionHandler();
+    // reposition external close
+    if(externalGroupCloseRepositionHandler) externalGroupCloseRepositionHandler();
+  }
+}
+
+/* observe dynamic additions while in move mode */
+const observer = new MutationObserver((mutations)=>{
+  if(!(isMoveMode || isGroupMoveMode)) return;
+  mutations.forEach(m=>{
+    m.addedNodes && m.addedNodes.forEach(n=>{
+      if(n.nodeType===1 && n.classList && n.classList.contains('tile') && n!==addTile){
+        addDeleteX(n);
+        enableDragForTile(n);
+        buildFlowOrder();
+        updateFlowPositions(true);
+      }
+    });
+  });
+});
+observer.observe(tiles, { childList: true });
+
+/* Accessibility: close menus on ESC */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){
+    hideEngineMenu();
+    closeContextMenu();
+    closeSettingsMenu();
+    hideAddModal();
+    closeGroupPopup();
+  }
+});
+
+/* helper to escape attribute-like strings */
+function escapeHtml(s){ return (s+'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'&quot;'); }
+function escapeHtmlAttr(s){ return (s+'').replace(/"/g,'&quot;').replace(/'/g,"&#39;"); }
+
+/* save on unload to be extra-safe */
+window.addEventListener('beforeunload', ()=>{
+  try{ saveAll(); }catch(e){}
+});
+
+/* init (ONE time, after all functions defined) */
+initEnginesFromStorage();
+loadPreferredEngine();
+loadAll();
+loadBackgroundFromStorage();
+loadSearchPref();
+
+/* ===== Modified settings menu rendering: remove JSON export/import items, add export (.html) and keep import links (.html/.txt) ===== */
+function renderSettingsMenu(){
+  closeSettingsMenu();
+  settingsMenuNode = document.createElement('div');
+  settingsMenuNode.className = 'menu settings-menu';
+  settingsMenuNode.style.pointerEvents = 'auto';
+  settingsMenuNode.tabIndex = -1;
+  settingsMenuNode.style.minWidth = SETTINGS_MENU_SETTINGS.width + 'px';
+
+  const btnBg = document.createElement('button');
+  btnBg.innerHTML = '<span class="icon">🖼️</span><span>Установить фон страницы</span>';
+  btnBg.addEventListener('click', async (ev)=>{
+    ev.stopPropagation();
+    await pickBackgroundImage();
+    closeSettingsMenu();
+  });
+
+  const btnResetBg = document.createElement('button');
+  btnResetBg.innerHTML = '<span class="icon">🗑️</span><span>Сбросить фон</span>';
+  btnResetBg.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    clearBackground();
+    closeSettingsMenu();
+  });
+
+  const btnSearchToggle = document.createElement('button');
+  const isVisible = loadSearchPref();
+  btnSearchToggle.innerHTML = '<span class="icon">🔎</span><span>Поисковая система</span><span class="toggle"><div class="switch '+(isVisible? 'on':'' )+'" id="searchSwitch"><div class="knob"></div></div></span>';
+  btnSearchToggle.addEventListener('click', (ev)=>{
+    ev.stopPropagation();
+    const sw = document.getElementById('searchSwitch');
+    if(!sw) return;
+    const nowOn = sw.classList.toggle('on');
+    setSearchVisible(nowOn);
+  });
+
+  // NEW: Export links as .html (replaces export JSON)
+  const btnExportHtml = document.createElement('button');
+  btnExportHtml.innerHTML = '<span class="icon">⬆️</span><span>Экспорт ссылок (.html)</span>';
+  btnExportHtml.addEventListener('click', async (ev)=>{
+    ev.stopPropagation();
+    await exportLinksToHtmlFile();
+    closeSettingsMenu();
+  });
+
+  // KEEP: Import links (.html/.txt)
+  const btnImportHtml = document.createElement('button');
+  btnImportHtml.innerHTML = '<span class="icon">⬇️</span><span>Импорт ссылок (.html)</span>';
+  btnImportHtml.addEventListener('click', async (ev)=>{
+    ev.stopPropagation();
+    await importUrlsFromFile(null); // null -> main page
+    closeSettingsMenu();
+  });
+
+  // Note: removed JSON import/export menu entries per request
+
+  settingsMenuNode.appendChild(btnBg);
+  settingsMenuNode.appendChild(btnResetBg);
+  settingsMenuNode.appendChild(btnSearchToggle);
+  settingsMenuNode.appendChild(btnExportHtml);
+  settingsMenuNode.appendChild(btnImportHtml);
+
+  const stopPropagationFn = (e) => e.stopPropagation();
+  settingsMenuNode._stopPropagationFn = stopPropagationFn;
+  settingsMenuNode.addEventListener('click', stopPropagationFn);
+
+  contextRoot.appendChild(settingsMenuNode);
+  contextRoot.style.pointerEvents = 'auto';
+
+  // Positioning
+  const fabRect = settingsFab.getBoundingClientRect();
+  const menuW = SETTINGS_MENU_SETTINGS.width;
+  let left = fabRect.left + SETTINGS_MENU_SETTINGS.offsetX;
+  let top;
+
+  if(SETTINGS_MENU_SETTINGS.prefer === 'below'){
+    top = fabRect.bottom + SETTINGS_MENU_SETTINGS.offsetY;
+  } else if(SETTINGS_MENU_SETTINGS.prefer === 'center'){
+    left = (window.innerWidth - menuW) / 2 + SETTINGS_MENU_SETTINGS.offsetX;
+    top = fabRect.bottom + SETTINGS_MENU_SETTINGS.offsetY;
+  } else { // default 'above'
+    top = fabRect.top - SETTINGS_MENU_SETTINGS.offsetY - 160;
+  }
+
+  const rect = settingsMenuNode.getBoundingClientRect();
+  const w = rect.width || menuW;
+  const h = rect.height || 160;
+  if(left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+  if(top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+  if(left < 8) left = 8;
+  if(top < 8) top = 8;
+
+  settingsMenuNode.style.left = left + 'px';
+  settingsMenuNode.style.top = top + 'px';
+
+  setTimeout(()=>document.addEventListener('click', onDocClickCloseSettings), 0);
+
+  settingsFab.setAttribute('aria-expanded','true');
+
+  setTimeout(()=>settingsMenuNode && settingsMenuNode.focus(), 50);
+}
+
+/* Wiring for FAB */
+settingsFab.addEventListener('click', (ev)=>{
+  ev.stopPropagation();
+  if(settingsMenuNode) closeSettingsMenu();
+  else renderSettingsMenu();
+});
+
+/* ===== Background picker / handling ===== */
+
+async function pickBackgroundImage(){
+  try{
+    if(window.showOpenFilePicker){
+      try{
+        const handles = await window.showOpenFilePicker({
+          types: [{
+            description: 'Images',
+            accept: {'image/*': ['.png','.jpg','.jpeg','.webp','.gif','.bmp','.svg']}
+          }],
+          multiple:false
+        });
+        if(handles && handles.length){
+          const file = await handles[0].getFile();
+          await setBackgroundFromFile(file);
+          return;
+        }
+      }catch(e){}
+    }
+
+    if(window.showDirectoryPicker){
+      try{
+        const dir = await window.showDirectoryPicker();
+        for await (const [, entry] of dir){
+          if(entry.kind === 'file'){
+            const name = entry.name.toLowerCase();
+            if(/\.(png|jpe?g|webp|gif|bmp|svg)$/.test(name)){
+              const file = await entry.getFile();
+              await setBackgroundFromFile(file);
+              return;
+            }
+          }
+        }
+        alert('В выбранной папке не найдено изображений.');
+        return;
+      }catch(e){}
+    }
+
+    bgFileInput.value = '';
+    bgFileInput.click();
+    bgFileInput.onchange = async ()=>{
+      const f = bgFileInput.files && bgFileInput.files[0];
+      if(f) await setBackgroundFromFile(f);
+    };
+  }catch(err){
+    console.error('pickBackgroundImage error', err);
+    alert('Не удалось выбрать файл фона: ' + (err && err.message ? err.message : 'ошибка'));
+  }
+}
+
+async function setBackgroundFromFile(file){
+  try{
+    const reader = new FileReader();
+    const prom = new Promise((res, rej)=>{
+      reader.onload = ()=>res(reader.result);
+      reader.onerror = ()=>rej(reader.error);
+    });
+    reader.readAsDataURL(file);
+    const dataURL = await prom;
+    pageBg.style.backgroundImage = `url('${dataURL}')`;
+    pageBg.style.opacity = '1';
+    try{ localStorage.setItem(BG_DATA_KEY, JSON.stringify({ name: file.name, data: dataURL })); }catch(e){}
+    document.documentElement.style.background = 'none';
+  }catch(e){
+    console.error('setBackgroundFromFile', e);
+    alert('Не удалось установить фон: ' + (e && e.message ? e.message : 'ошибка'));
+  }
+}
+
+function loadBackgroundFromStorage(){
+  try{
+    const raw = localStorage.getItem(BG_DATA_KEY);
+    if(!raw) return;
+    const obj = JSON.parse(raw);
+    if(obj && obj.data){
+      pageBg.style.backgroundImage = `url('${obj.data}')`;
+      pageBg.style.opacity = '1';
+      document.documentElement.style.background = 'none';
+    }
+  }catch(e){}
+}
+
+function clearBackground(){
+  try{ localStorage.removeItem(BG_DATA_KEY); }catch(e){}
+  pageBg.style.backgroundImage = '';
+  pageBg.style.opacity = '0';
+  document.documentElement.style.background = '';
+}
+
+/* end of script */
+</script></body></html>
