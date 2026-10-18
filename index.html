@@ -730,11 +730,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ===================== Поиск ===================== */
     const searchEngines = [
-        { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', domain: 'duckduckgo.com' },
-        { name: 'Google', url: 'https://www.google.com/search?q=', domain: 'google.com' },
-        { name: 'Yandex', url: 'https://yandex.ru/search/?text=', domain: 'yandex.ru' },
-        { name: 'Startpage', url: 'https://www.startpage.com/do/search?query=', domain: 'startpage.com' },
-        { name: 'Bing', url: 'https://www.bing.com/search?q=', domain: 'bing.com' }
+        { name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', domain: 'duckduckgo.com', color: '#de5833' },
+        { name: 'Google', url: 'https://www.google.com/search?q=', domain: 'google.com', color: '#4285f4' },
+        { name: 'Yandex', url: 'https://yandex.ru/search/?text=', domain: 'yandex.ru', color: '#fc3f1d' },
+        { name: 'Startpage', url: 'https://www.startpage.com/do/search?query=', domain: 'startpage.com', color: '#3b5bdb' },
+        { name: 'Bing', url: 'https://www.bing.com/search?q=', domain: 'bing.com', color: '#008373' }
     ];
     const searchInput = document.getElementById('search-input');
     const engineBtn = document.getElementById('engine-btn');
@@ -742,10 +742,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const engineMenu = document.getElementById('engine-menu');
     const engineIcons = {};
 
+    // Запасной значок: цветной квадрат с буквой, если иконку сайта загрузить не удалось
+    function engineFallback(e) {
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="' + e.color + '"/><text x="16" y="23" font-size="19" font-weight="700" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif">' + e.name.charAt(0) + '</text></svg>';
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    function engineIconSrc(e) { return engineIcons[e.domain] || engineFallback(e); }
     function currentEngine() { return searchEngines[settings.engine] || searchEngines[0]; }
     function refreshEngineUI() {
         const cur = currentEngine();
-        engineIcon.src = engineIcons[cur.domain] || FALLBACK_ICON;
+        engineIcon.src = engineIconSrc(cur);
         engineIcon.alt = cur.name;
         engineBtn.title = cur.name;
         engineMenu.innerHTML = '';
@@ -753,7 +759,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'engine-item' + (i === settings.engine ? ' active' : '');
-            item.innerHTML = `<img src="${engineIcons[e.domain] || FALLBACK_ICON}" alt=""><span>${e.name}</span>`;
+            const img = document.createElement('img');
+            img.src = engineIconSrc(e); img.alt = '';
+            const label = document.createElement('span');
+            label.textContent = e.name;
+            item.append(img, label);
             item.addEventListener('click', () => {
                 settings.engine = i; saveSettings();
                 engineMenu.classList.remove('open');
@@ -770,7 +780,8 @@ document.addEventListener('DOMContentLoaded', function () {
     refreshEngineUI();
     (async () => {
         for (const e of searchEngines) {
-            engineIcons[e.domain] = await getFaviconUrl('https://' + e.domain);
+            const got = await getFaviconUrl('https://' + e.domain);
+            engineIcons[e.domain] = got === FALLBACK_ICON ? null : got;
             refreshEngineUI();
         }
     })();
