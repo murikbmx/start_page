@@ -10,6 +10,8 @@
         --tile-alpha: 0.78;
         --dim: 0.15;
         --cols: 5;
+        --bg-blur: 0px;
+        --bg-bright: 1;
         --tile-radius: 13%;
         --panel-field: rgba(255,255,255,0.08);
         --panel-field-hover: rgba(255,255,255,0.16);
@@ -34,7 +36,8 @@
 
     /* ---------- Фон ---------- */
     #bg {
-        position: fixed; inset: 0; z-index: -2;
+        position: fixed; inset: calc(var(--bg-blur) * -2); z-index: -2;
+        filter: blur(var(--bg-blur)) brightness(var(--bg-bright));
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -288,7 +291,7 @@
     .close-btn:hover { color: var(--panel-text); }
 
     /* ---------- Папки ---------- */
-    .folder-icon { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 6%; padding: 14%; }
+    .folder-icon { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6%; padding: 14%; }
     body .link-icon.folder-icon img { width: 100%; height: 100%; border-radius: 22%; object-fit: cover; }
     .folder-icon svg { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: none; stroke: var(--text); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
     #folder-modal { z-index: 1500; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
@@ -325,6 +328,44 @@
     .bm-row span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .bm-row em { font-style: normal; color: var(--panel-muted); font-size: 12px; }
     .bm-row input { accent-color: var(--accent); }
+
+    /* ---------- Перетаскивание ---------- */
+    .link-item.dragging { opacity: 0.35; }
+    .link-item.drop-before::before, .link-item.drop-after::after {
+        content: ''; position: absolute; top: 0; height: var(--tile); width: 4px; z-index: 4;
+        background: var(--accent); border-radius: 2px; pointer-events: none;
+    }
+    .link-item.drop-before::before { left: -11px; }
+    .link-item.drop-after::after { right: -11px; }
+    .link-item.drop-into .link-icon { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .folder-out {
+        display: none; position: sticky; bottom: 0; margin-top: 18px; padding: 14px; text-align: center; font-size: 14px;
+        color: #d9cfc9; background: rgba(20, 14, 11, 0.96);
+        border: 2px dashed rgba(255,255,255,0.28); border-radius: 12px;
+    }
+    body.is-dragging .folder-out { display: block; }
+    .folder-out.over { border-color: var(--accent); background: rgba(224,102,42,0.16); color: #fff; }
+
+    /* ---------- Быстрый поиск ---------- */
+    #qs { z-index: 2500; align-items: flex-start; padding-top: 14vh; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
+    .qs-card {
+        width: min(580px, calc(100% - 32px)); padding: 8px;
+        background: rgba(20, 14, 11, 0.96); border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+    }
+    #qs-input {
+        width: 100%; padding: 14px 14px; border: none; outline: none; background: transparent;
+        color: #fff; font-size: 18px;
+    }
+    #qs-input::placeholder { color: #8f837c; }
+    #qs-list { padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.1); }
+    #qs-list:empty { display: none; }
+    .qs-row { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 10px; cursor: pointer; color: #f2ece8; }
+    .qs-row.active { background: rgba(255,255,255,0.12); }
+    .qs-row img, .qs-row svg { width: 28px; height: 28px; flex: none; border-radius: 7px; object-fit: contain; }
+    .qs-row svg { fill: none; stroke: #cfc6c0; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; border-radius: 0; }
+    .qs-row b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qs-row small { margin-left: auto; padding-left: 12px; color: #a89c95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
 
     @media (max-width: 760px) {
         :root { --cols: 3; }
@@ -394,6 +435,17 @@
         <div class="gradient-presets" id="presets"></div>
     </div>
 
+    <div class="row">
+        <label>Размытие</label>
+        <input type="range" id="blur-range" min="0" max="30" step="1">
+        <span class="val" id="blur-val"></span>
+    </div>
+    <div class="row">
+        <label>Яркость</label>
+        <input type="range" id="bright-range" min="30" max="150" step="1">
+        <span class="val" id="bright-val"></span>
+    </div>
+
     <h4>Текст и плитки</h4>
     <div class="row"><label>Цвет шрифта</label><input type="color" id="text-color"></div>
     <div class="swatches" id="text-swatches"></div>
@@ -440,6 +492,7 @@
     <label class="check"><input type="checkbox" id="icon-fill"> Иконка сайта на весь ярлык</label>
     <div class="btn-row"><button class="btn" id="refresh-icons">Обновить иконки сайтов</button></div>
     <label class="check"><input type="checkbox" id="show-search"> Показывать строку поиска</label>
+    <label class="check"><input type="checkbox" id="quick-search"> Быстрый поиск: печатайте прямо на странице</label>
 
     <h4>Закладки</h4>
     <div class="btn-row">
@@ -469,7 +522,7 @@
     <div class="btn-row">
         <button class="btn" id="reset-btn">Сбросить оформление</button>
     </div>
-    <div class="hint">Правая кнопка мыши по плитке — изменить. Крестик при наведении — удалить.</div>
+    <div class="hint">Ярлыки можно перетаскивать: между плитками — менять порядок, на папку — положить внутрь. Правая кнопка мыши — изменить, крестик при наведении — удалить.</div>
 </div>
 
 <!-- Редактор ссылки / папки -->
@@ -503,6 +556,7 @@
             <button type="button" id="folder-close" title="Закрыть">×</button>
         </div>
         <div class="folder-grid" id="folder-grid"></div>
+        <div class="folder-out" id="folder-out">Перетащите ярлык сюда, чтобы вынести его из папки</div>
     </div>
 </div>
 
@@ -516,6 +570,14 @@
             <button class="btn" id="bm-cancel">Отмена</button>
             <button class="btn primary" id="bm-do">Добавить</button>
         </div>
+    </div>
+</div>
+
+<!-- Быстрый поиск по ярлыкам -->
+<div class="modal" id="qs">
+    <div class="qs-card">
+        <input id="qs-input" placeholder="Найти ярлык или поискать в интернете" autocomplete="off" spellcheck="false">
+        <div id="qs-list"></div>
     </div>
 </div>
 
@@ -547,6 +609,9 @@ document.addEventListener('DOMContentLoaded', function () {
         gridWidth: 1170,
         tileSize: 110,
         iconFill: true,
+        bgBlur: 0,
+        bgBright: 100,
+        quickSearch: true,
         tileRadius: 13,
         engine: 0,
         panelGradient: false,
@@ -648,6 +713,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.toggle('with-search', !!settings.showSearch);
         document.body.classList.toggle('icon-fill', !!settings.iconFill);
         root.style.setProperty('--tile-radius', settings.tileRadius + '%');
+        root.style.setProperty('--bg-blur', settings.bgBlur + 'px');
+        root.style.setProperty('--bg-bright', settings.bgBright / 100);
         applyPanelTheme();
 
         if (settings.bgMode === 'image' && settings.bgImage) {
@@ -708,8 +775,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     })();
 
-    function performSearch() {
-        const q = searchInput.value.trim();
+    function performSearch() { runSearch(searchInput.value); }
+    function runSearch(raw) {
+        const q = String(raw).trim();
         if (!q) return;
         if (/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/.test(q) || /^https?:\/\//.test(q)) {
             window.location.href = /^https?:\/\//.test(q) ? q : 'https://' + q;
@@ -925,6 +993,90 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* ---------- Плитки ---------- */
+    /* ---------- Перетаскивание ярлыков ---------- */
+    let dragItem = null, lastMark = null;
+    const END = {};
+    const containsFolder = (folder, target) => isFolder(folder) && (folder.items || []).some(it => it === target || containsFolder(it, target));
+
+    function clearMarks() {
+        if (lastMark) lastMark.classList.remove('drop-before', 'drop-after', 'drop-into');
+        lastMark = null;
+    }
+    function markDrop(el, mode) {
+        if (lastMark && lastMark !== el) clearMarks();
+        el.classList.remove('drop-before', 'drop-after', 'drop-into');
+        el.classList.add('drop-' + mode);
+        lastMark = el;
+    }
+    function endDrag() {
+        clearMarks();
+        dragItem = null;
+        document.body.classList.remove('is-dragging');
+        document.querySelectorAll('.link-item.dragging').forEach(x => x.classList.remove('dragging'));
+        document.getElementById('folder-out').classList.remove('over');
+    }
+    function dropMode(e, el, target) {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width;
+        if (isFolder(target) && x > 0.25 && x < 0.75 && !containsFolder(dragItem.item, target)) return 'into';
+        return x < 0.5 ? 'before' : 'after';
+    }
+    function moveItem(src, destList, target, mode) {
+        const from = src.list.indexOf(src.item);
+        if (from < 0) return;
+        if (mode === 'into') {
+            src.list.splice(from, 1);
+            target.items.push(src.item);
+        } else {
+            let to = target === END ? destList.length : destList.indexOf(target);
+            if (to < 0) return;
+            if (mode === 'after') to++;
+            src.list.splice(from, 1);
+            if (src.list === destList && from < to) to--;
+            destList.splice(to, 0, src.item);
+        }
+        persist(); renderAll();
+    }
+    function makeDraggable(el, list, item) {
+        el.draggable = true;
+        el.querySelectorAll('img').forEach(i => { i.draggable = false; });
+        el.addEventListener('dragstart', e => {
+            dragItem = { list, item };
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', item.name || '');
+            setTimeout(() => { el.classList.add('dragging'); document.body.classList.add('is-dragging'); }, 0);
+        });
+        el.addEventListener('dragend', endDrag);
+        el.addEventListener('dragover', e => {
+            if (!dragItem || dragItem.item === item) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            markDrop(el, dropMode(e, el, item));
+        });
+        el.addEventListener('drop', e => {
+            if (!dragItem || dragItem.item === item) return;
+            e.preventDefault();
+            const mode = dropMode(e, el, item), src = dragItem;
+            endDrag();
+            moveItem(src, list, item, mode);
+        });
+    }
+    function makeEndDropTarget(el, list) {
+        el.addEventListener('dragover', e => {
+            if (!dragItem) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            markDrop(el, 'before');
+        });
+        el.addEventListener('drop', e => {
+            if (!dragItem) return;
+            e.preventDefault();
+            const src = dragItem;
+            endDrag();
+            moveItem(src, list, END, 'before');
+        });
+    }
+
     function buildTile(list, index) {
         const item = list[index];
         let el;
@@ -954,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (i >= 0) deleteItem(list, i);
         });
         el.appendChild(del);
+        makeDraggable(el, list, item);
         return el;
     }
     function buildAddTile(list) {
@@ -961,6 +1114,7 @@ document.addEventListener('DOMContentLoaded', function () {
         add.className = 'link-item add-item';
         add.innerHTML = '<div class="link-icon">+</div><div class="link-name">.</div>';
         add.addEventListener('click', () => openEditor(list, null));
+        makeEndDropTarget(add, list);
         return add;
     }
 
@@ -988,6 +1142,120 @@ document.addEventListener('DOMContentLoaded', function () {
     folderModal.addEventListener('mousedown', e => { if (e.target === folderModal) closeFolder(); });
 
     function renderAll() { renderLinks(); renderFolderView(); }
+
+    // Зона «вынести из папки» на уровень выше
+    (function () {
+        const out = document.getElementById('folder-out');
+        out.addEventListener('dragover', e => { if (!dragItem) return; e.preventDefault(); out.classList.add('over'); });
+        out.addEventListener('dragleave', () => out.classList.remove('over'));
+        out.addEventListener('drop', e => {
+            if (!dragItem) return;
+            e.preventDefault();
+            const src = dragItem;
+            const parent = folderStack.length > 1 ? folderStack[folderStack.length - 2].items : savedLinks;
+            endDrag();
+            moveItem(src, parent, END, 'before');
+        });
+    })();
+
+    /* ---------- Быстрый поиск по ярлыкам ---------- */
+    const qs = document.getElementById('qs');
+    const qsInput = document.getElementById('qs-input');
+    const qsList = document.getElementById('qs-list');
+    let qsItems = [], qsIndex = 0;
+
+    const QS_FOLDER_SVG = '<svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>';
+    const QS_SEARCH_SVG = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>';
+
+    function collectAll() {
+        const out = [];
+        (function walk(list, path) {
+            for (const it of list) {
+                if (isFolder(it)) { out.push({ kind: 'folder', item: it, path }); walk(it.items || [], path.concat([it])); }
+                else out.push({ kind: 'link', item: it, path });
+            }
+        })(savedLinks, []);
+        return out;
+    }
+    function qsScore(entry, q) {
+        const name = (entry.item.name || '').toLowerCase();
+        const url = (entry.item.url || '').toLowerCase().replace(/^https?:\/\/(www\.)?/, '');
+        if (name.startsWith(q)) return 0;
+        if (name.split(/[\s\-_.]+/).some(w => w.startsWith(q))) return 1;
+        if (name.includes(q)) return 2;
+        if (url.includes(q)) return 3;
+        return -1;
+    }
+    function renderQs() {
+        const raw = qsInput.value.trim();
+        const q = raw.toLowerCase();
+        qsItems = [];
+        if (q) {
+            collectAll().map(e => ({ e, s: qsScore(e, q) })).filter(x => x.s >= 0)
+                .sort((a, b) => a.s - b.s).slice(0, 8)
+                .forEach(x => qsItems.push({ type: x.e.kind, entry: x.e }));
+            qsItems.push({ type: 'web', q: raw });
+        }
+        qsIndex = Math.max(0, Math.min(qsIndex, qsItems.length - 1));
+        qsList.innerHTML = '';
+        qsItems.forEach((it, i) => {
+            const row = document.createElement('div');
+            row.className = 'qs-row' + (i === qsIndex ? ' active' : '');
+            if (it.type === 'web') {
+                row.innerHTML = QS_SEARCH_SVG + '<b>Искать «' + escapeHtml(it.q) + '»</b><small>' + escapeHtml(currentEngine().name) + '</small>';
+            } else if (it.type === 'folder') {
+                const where = it.entry.path.map(f => f.name).join(' › ');
+                row.innerHTML = QS_FOLDER_SVG + '<b>' + escapeHtml(it.entry.item.name) + '</b><small>' + escapeHtml(where ? where : 'Папка') + '</small>';
+            } else {
+                const l = it.entry.item;
+                const where = it.entry.path.length ? it.entry.path.map(f => f.name).join(' › ') : (domainOf(l.url) || '');
+                row.innerHTML = '<img src="' + escapeHtml(l.icon || FALLBACK_ICON) + '" alt=""><b>' + escapeHtml(l.name) + '</b><small>' + escapeHtml(where) + '</small>';
+            }
+            row.addEventListener('mouseenter', () => {
+                qsIndex = i;
+                qsList.querySelectorAll('.qs-row').forEach((r, k) => r.classList.toggle('active', k === i));
+            });
+            row.addEventListener('mousedown', e => { e.preventDefault(); qsOpen(i); });
+            qsList.appendChild(row);
+        });
+    }
+    function openQs(ch) {
+        qs.classList.add('open');
+        qsInput.value = ch || '';
+        qsIndex = 0;
+        renderQs();
+        qsInput.focus();
+    }
+    function closeQs() { qs.classList.remove('open'); qsInput.blur(); }
+    function qsOpen(i) {
+        const it = qsItems[i];
+        if (!it) return;
+        closeQs();
+        if (it.type === 'link') location.href = it.entry.item.url;
+        else if (it.type === 'folder') {
+            folderStack = it.entry.path.concat([it.entry.item]);
+            folderModal.classList.add('open');
+            renderFolderView();
+        } else runSearch(it.q);
+    }
+    qsInput.addEventListener('input', () => { qsIndex = 0; renderQs(); });
+    qsInput.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') { e.preventDefault(); qsIndex = (qsIndex + 1) % Math.max(1, qsItems.length); renderQs(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); qsIndex = (qsIndex - 1 + qsItems.length) % Math.max(1, qsItems.length); renderQs(); }
+        else if (e.key === 'Enter') { e.preventDefault(); qsOpen(qsIndex); }
+    });
+    qs.addEventListener('mousedown', e => { if (e.target === qs) closeQs(); });
+
+    document.addEventListener('keydown', e => {
+        if (!settings.quickSearch) return;
+        if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1 || e.key === ' ') return;
+        const t = e.target;
+        if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+        if (modal.classList.contains('open') || bmModal.classList.contains('open') || qs.classList.contains('open')) return;
+        e.preventDefault();
+        openQs(e.key === '/' ? '' : e.key);
+    });
+
 
     document.getElementById('new-folder-btn').addEventListener('click', () => {
         document.getElementById('settings').classList.remove('open');
@@ -1148,7 +1416,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     document.addEventListener('keydown', e => {
         if (e.key !== 'Escape') return;
-        if (modal.classList.contains('open')) closeEditor();
+        if (document.getElementById('qs').classList.contains('open')) closeQs();
+        else if (modal.classList.contains('open')) closeEditor();
         else if (bmModal.classList.contains('open')) closeBm();
         else if (folderModal.classList.contains('open')) closeFolder();
         else panel.classList.remove('open');
@@ -1173,6 +1442,11 @@ document.addEventListener('DOMContentLoaded', function () {
         $('tile-size-val').textContent = settings.tileSize + 'px';
         $('show-search').checked = !!settings.showSearch;
         $('icon-fill').checked = !!settings.iconFill;
+        $('quick-search').checked = !!settings.quickSearch;
+        $('blur-range').value = settings.bgBlur;
+        $('blur-val').textContent = settings.bgBlur + 'px';
+        $('bright-range').value = settings.bgBright;
+        $('bright-val').textContent = settings.bgBright + '%';
         $('radius-range').value = settings.tileRadius;
         $('radius-val').textContent = settings.tileRadius + '%';
         document.querySelectorAll('#shape-btns .shape-btn').forEach(b => b.classList.toggle('active', +b.dataset.r === settings.tileRadius));
@@ -1215,6 +1489,9 @@ document.addEventListener('DOMContentLoaded', function () {
     $('panel-c1').addEventListener('input', e => update(() => { settings.panelColor1 = e.target.value; }));
     $('panel-c2').addEventListener('input', e => update(() => { settings.panelColor2 = e.target.value; }));
     $('panel-angle').addEventListener('input', e => update(() => { settings.panelAngle = +e.target.value; }));
+    $('blur-range').addEventListener('input', e => update(() => { settings.bgBlur = +e.target.value; }));
+    $('bright-range').addEventListener('input', e => update(() => { settings.bgBright = +e.target.value; }));
+    $('quick-search').addEventListener('change', e => update(() => { settings.quickSearch = e.target.checked; }));
     $('icon-fill').addEventListener('change', e => update(() => { settings.iconFill = e.target.checked; }));
     $('show-search').addEventListener('change', e => update(() => { settings.showSearch = e.target.checked; }));
 
