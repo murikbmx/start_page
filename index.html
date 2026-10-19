@@ -219,6 +219,7 @@
         width: 40px; height: 30px; padding: 0; border: 1px solid var(--panel-line);
         border-radius: 6px; background: none; cursor: pointer;
     }
+    .row select { min-width: 0; text-overflow: ellipsis; }
     .row input[type="number"], .row select, .text-input {
         background: var(--panel-field); color: var(--panel-text);
         border: 1px solid var(--panel-line); border-radius: 6px;
@@ -409,6 +410,14 @@
 
 <!-- Настройки -->
 <div class="settings" id="settings">
+    <div class="row">
+        <label>Язык / Language</label>
+        <select id="lang-select" style="flex:1">
+            <option value="auto">Auto / Авто</option>
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+        </select>
+    </div>
     <h4>Фон</h4>
     <div class="row">
         <label>Тип</label>
@@ -640,6 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const DEFAULTS = {
+        lang: 'auto',
         bgMode: 'image',
         bgImage: '',          // dataURL или ссылка
         dim: 15,              // %
@@ -668,9 +678,160 @@ document.addEventListener('DOMContentLoaded', function () {
     let settings = Object.assign({}, DEFAULTS, getStorage('homeSettings', {}));
     let gradient = Object.assign({}, DEFAULT_GRADIENT, getStorage('customGradient')[0] || {});
 
+    /* ===================== Язык / Language ===================== */
+    const I18N_EN = {
+ "Фон": "Background",
+ "Тип": "Type",
+ "Картинка": "Image",
+ "Градиент": "Gradient",
+ "Загрузить картинку": "Upload image",
+ "Убрать": "Remove",
+ "Затемнение": "Dimming",
+ "Цвет 1": "Color 1",
+ "Цвет 2": "Color 2",
+ "Линейный": "Linear",
+ "Радиальный": "Radial",
+ "Угол": "Angle",
+ "Размытие": "Blur",
+ "Яркость": "Brightness",
+ "Текст и плитки": "Text and tiles",
+ "Цвет шрифта": "Font color",
+ "Прозрачность плиток": "Tile opacity",
+ "Сетка ярлыков": "Tile grid",
+ "Ярлыков в ряду": "Tiles per row",
+ "Между строками": "Row spacing",
+ "Ширина сетки": "Grid width",
+ "Ширина ярлыка": "Tile width",
+ "Высота ярлыка": "Tile height",
+ "Квадрат": "Square",
+ "Широкий": "Wide",
+ "Стиль ярлыка": "Tile style",
+ "Карточка (цвет по иконке)": "Card (color from icon)",
+ "Тёмная плитка": "Dark tile",
+ "Иконка на весь ярлык": "Icon fills the tile",
+ "Название": "Name",
+ "Авто (внутри у широких)": "Auto (inside if wide)",
+ "Внутри ярлыка": "Inside the tile",
+ "Под ярлыком": "Below the tile",
+ "Форма ярлыков": "Tile shape",
+ "Скругление": "Corner radius",
+ "Обновить иконки сайтов": "Refresh site icons",
+ "Показывать строку поиска": "Show search bar",
+ "Быстрый поиск: печатайте прямо на странице": "Quick search: just start typing on the page",
+ "Закладки": "Bookmarks",
+ "Импорт закладок": "Import bookmarks",
+ "Новая папка": "New folder",
+ "Chrome и Edge: Диспетчер закладок → ⋮ → «Экспорт закладок». Firefox: Закладки → Управление закладками → Импорт и резервные копии → «Экспорт закладок в HTML». Затем выберите сохранённый .html файл.": "Chrome and Edge: Bookmark manager → ⋮ → “Export bookmarks”. Firefox: Bookmarks → Manage bookmarks → Import and backup → “Export bookmarks to HTML”. Then choose the saved .html file.",
+ "Окно настроек": "Settings window",
+ "Градиентный фон окна": "Gradient window background",
+ "Данные": "Data",
+ "Экспорт": "Export",
+ "Импорт": "Import",
+ "Открыть файл": "Open file",
+ "Сбросить оформление": "Reset appearance",
+ "Ярлыки можно перетаскивать: между плитками — менять порядок, на папку — положить внутрь. Правая кнопка мыши — изменить, крестик при наведении — удалить.": "Tiles can be dragged: between tiles to reorder, onto a folder to put them inside. Right-click to edit; the × on hover deletes.",
+ "Загрузить иконку с компьютера": "Upload icon from computer",
+ "Цвет ярлыка": "Tile color",
+ "Авто": "Auto",
+ "Удалить": "Delete",
+ "Отмена": "Cancel",
+ "Сохранить": "Save",
+ "Перетащите ярлык сюда, чтобы вынести его из папки": "Drop a tile here to take it out of the folder",
+ "Выберите папку, которую нужно добавить. Вложенные папки сохранятся.": "Choose the folder to add. Subfolders are kept.",
+ "Добавить": "Add",
+ "Отменить": "Undo",
+ "Поисковая система": "Search engine",
+ "Поиск или адрес сайта": "Search or enter a web address",
+ "Искать": "Search",
+ "Настройки": "Settings",
+ "или вставьте ссылку на картинку и нажмите Enter": "or paste an image link and press Enter",
+ "Слегка скруглённый": "Slightly rounded",
+ "Мягкий": "Soft",
+ "Круг": "Circle",
+ "Сохранить ссылки, настройки, фон и иконки в .zip": "Save links, settings, background and icons to a .zip",
+ "Загрузить .zip (или старый .json)": "Load a .zip (or an old .json)",
+ "URL иконки (необязательно)": "Icon URL (optional)",
+ "Назад": "Back",
+ "Закрыть": "Close",
+ "Найти ярлык или поискать в интернете": "Find a tile or search the web",
+ "Домашняя страница": "Home Page",
+ "Не удалось сохранить настройки: хранилище браузера переполнено. Попробуйте картинку меньшего размера.": "Could not save settings: browser storage is full. Try a smaller image.",
+ "Не удалось сохранить: хранилище браузера переполнено": "Could not save: browser storage is full",
+ "Загружаю иконки: {d} из {n}": "Loading icons: {d} of {n}",
+ "Папка «{n}» удалена": "Folder “{n}” deleted",
+ "«{n}» удалён": "“{n}” deleted",
+ "авто": "auto",
+ "Название папки": "Folder name",
+ "Искать «{q}»": "Search “{q}”",
+ "Папка": "Folder",
+ "это не HTML-экспорт закладок браузера": "this is not an HTML export of browser bookmarks",
+ "в файле не найдено закладок": "no bookmarks found in the file",
+ "Все закладки": "All bookmarks",
+ "Не удалось прочитать закладки: {m}": "Could not read bookmarks: {m}",
+ "Добавлена папка «{n}»: {c} закладок": "Folder “{n}” added: {c} bookmarks",
+ "Обновляю…": "Refreshing…",
+ "Не удалось прочитать картинку": "Could not read the image",
+ "Картинка слишком большая для хранилища браузера. Выберите файл поменьше.": "The image is too large for browser storage. Choose a smaller file.",
+ "Сбросить фон, цвет шрифта и остальные настройки оформления? Ссылки останутся.": "Reset the background, font color and other appearance settings? Your tiles will stay.",
+ "это не ZIP-архив": "this is not a ZIP archive",
+ "архив повреждён": "the archive is corrupted",
+ "неподдерживаемое сжатие в архиве": "unsupported compression in the archive",
+ "Готовлю архив…": "Preparing the archive…",
+ "в архиве нет settings.json": "settings.json is missing from the archive",
+ "Импортировать данные? Текущие настройки будут перезаписаны.": "Import data? Current settings will be overwritten.",
+ "Не удалось сохранить: хранилище браузера переполнено.": "Could not save: browser storage is full.",
+ "Ошибка при импорте: {m}": "Import error: {m}",
+ "Ошибка чтения файла: {m}": "Could not read the file: {m}"
+};
+    let LANG = 'ru';
+    const CYR = /[А-Яа-яЁё]/;
+    function detectLang() {
+        if (settings.lang === 'ru' || settings.lang === 'en') return settings.lang;
+        let l = '';
+        try { l = (typeof browser !== 'undefined' && browser.i18n && browser.i18n.getUILanguage) ? browser.i18n.getUILanguage() : navigator.language; } catch (e) { /* ignore */ }
+        return /^(ru|uk|be)\b/i.test(String(l || '')) ? 'ru' : 'en';
+    }
+    // t('русский текст', {имя: значение}) — вернёт текст на нужном языке
+    function t(ru, vars) {
+        let out = (LANG === 'en' && I18N_EN[ru]) || ru;
+        if (vars) for (const k in vars) out = out.split('{' + k + '}').join(vars[k]);
+        return out;
+    }
+    const I18N_SKIP = '#links, #folder-grid, #qs-list, #bm-list, #engine-menu, .file-preview';
+    const origText = new WeakMap();
+    // Переводит статичную разметку (тексты, подсказки, поля); динамические части строятся через t()
+    function translateDom() {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        let n;
+        while ((n = walker.nextNode())) {
+            const p = n.parentElement;
+            if (!p || /^(SCRIPT|STYLE)$/.test(p.tagName) || p.closest(I18N_SKIP)) continue;
+            const raw = origText.has(n) ? origText.get(n) : n.nodeValue;
+            if (!CYR.test(raw)) continue;
+            origText.set(n, raw);
+            const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(raw);
+            n.nodeValue = m[1] + t(m[2]) + m[3];
+        }
+        document.querySelectorAll('[title],[placeholder]').forEach(el => {
+            if (el.closest(I18N_SKIP)) return;
+            for (const a of ['title', 'placeholder']) {
+                if (!el.hasAttribute(a)) continue;
+                const key = 'ru' + a;
+                if (el.dataset[key] === undefined) {
+                    if (!CYR.test(el.getAttribute(a))) continue;
+                    el.dataset[key] = el.getAttribute(a);
+                }
+                el.setAttribute(a, t(el.dataset[key]));
+            }
+        });
+        document.title = t('Домашняя страница');
+        document.documentElement.lang = LANG;
+    }
+    function setLang() { LANG = detectLang(); translateDom(); }
+
     function saveSettings() {
         if (!setStorage('homeSettings', settings)) {
-            alert('Не удалось сохранить настройки: хранилище браузера переполнено. Попробуйте картинку меньшего размера.');
+            alert(t('Не удалось сохранить настройки: хранилище браузера переполнено. Попробуйте картинку меньшего размера.'));
         }
     }
     function saveGradient() { setStorage('customGradient', [gradient]); }
@@ -833,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function () {
         engineIcon.src = engineIconSrc(cur);
         engineIcon.alt = cur.name;
         engineBtn.title = cur.name;
-        engineMenu.innerHTML = '';
+        engineMenu.replaceChildren();
         searchEngines.forEach((e, i) => {
             const item = document.createElement('button');
             item.type = 'button';
@@ -893,7 +1054,19 @@ document.addEventListener('DOMContentLoaded', function () {
     let editList = null, editIndex = null, editKind = 'link';
     let folderStack = [];
 
-    const FOLDER_SVG = '<svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>';
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    function svgIcon(parts) {
+        const svg = document.createElementNS(SVG_NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        parts.forEach(([tag, attrs]) => {
+            const n = document.createElementNS(SVG_NS, tag);
+            for (const k in attrs) n.setAttribute(k, attrs[k]);
+            svg.append(n);
+        });
+        return svg;
+    }
+    const folderSvg = () => svgIcon([['path', { d: 'M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z' }]]);
+    const searchSvg = () => svgIcon([['circle', { cx: 10.5, cy: 10.5, r: 6 }], ['path', { d: 'M15 15l5 5' }]]);
 
     let savedLinks = getStorage('quickLinks');
     if (!savedLinks.length) {
@@ -907,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function persist() {
         if (!setStorage('quickLinks', savedLinks)) {
-            showToast('Не удалось сохранить: хранилище браузера переполнено');
+            showToast(t('Не удалось сохранить: хранилище браузера переполнено'));
         }
     }
 
@@ -994,7 +1167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let shown = false;
         try {
             const changed = await fillMissingIcons(savedLinks, (d, n) => {
-                if (n > 8 && d % 8 === 0 && d < n) { shown = true; showToast('Загружаю иконки: ' + d + ' из ' + n, null, true); }
+                if (n > 8 && d % 8 === 0 && d < n) { shown = true; showToast(t('Загружаю иконки: {d} из {n}', { d, n }), null, true); }
             });
             filling = false;
             if (shown) hideToast();
@@ -1006,13 +1179,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function deleteItem(list, index) {
         const [item] = list.splice(index, 1);
         persist(); renderAll();
-        const label = isFolder(item) ? 'Папка «' + item.name + '» удалена' : '«' + item.name + '» удалён';
+        const label = isFolder(item) ? t('Папка «{n}» удалена', { n: item.name }) : t('«{n}» удалён', { n: item.name });
         showToast(label, () => { list.splice(Math.min(index, list.length), 0, item); persist(); renderAll(); });
     }
 
     /* ---------- Редактор ---------- */
     let editColor = null;
-    function updateColorNote() { document.getElementById('edit-color-note').textContent = editColor ? '' : 'авто'; }
+    function updateColorNote() { document.getElementById('edit-color-note').textContent = editColor ? '' : t('авто'); }
     document.getElementById('edit-color').addEventListener('input', e => { editColor = e.target.value; updateColorNote(); });
     document.getElementById('edit-color-auto').addEventListener('click', () => { editColor = null; updateColorNote(); });
     function openEditor(list, index, kind) {
@@ -1023,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', function () {
         editKind = isFolder(item) ? 'folder' : 'link';
         linkFields.classList.toggle('hidden', editKind === 'folder');
         previewWrap.classList.toggle('hidden', editKind === 'folder');
-        nameInput.placeholder = editKind === 'folder' ? 'Название папки' : 'Название';
+        nameInput.placeholder = editKind === 'folder' ? t('Название папки') : t('Название');
         nameInput.value = item.name;
         if (editKind === 'link') {
             urlInput.value = (item.url || '').replace(/^https?:\/\//, '');
@@ -1222,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const minis = [];
             (function pick(l) { for (const x of l) { if (minis.length >= 4) return; if (isFolder(x)) pick(x.items || []); else if (x.icon && x.icon !== FALLBACK_ICON) minis.push(x); } })(item.items || []);
             if (minis.length) minis.forEach(m => { const i = new Image(); i.src = m.icon; i.alt = ''; i.draggable = false; mini.append(i); });
-            else mini.innerHTML = FOLDER_SVG;
+            else mini.append(folderSvg());
             box.append(mini);
             if (item.bg) { box.style.setProperty('--tbg', item.bg); box.style.setProperty('--tfg', tileFg(item.bg)); }
             el.addEventListener('click', () => openFolder(item));
@@ -1241,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         el.addEventListener('contextmenu', e => { e.preventDefault(); openEditor(list, index); });
         const del = document.createElement('button');
-        del.type = 'button'; del.className = 'del-btn'; del.title = 'Удалить'; del.textContent = '×';
+        del.type = 'button'; del.className = 'del-btn'; del.title = t('Удалить'); del.textContent = '×';
         del.addEventListener('click', e => {
             e.preventDefault(); e.stopPropagation();
             const i = list.indexOf(item);
@@ -1261,7 +1434,7 @@ document.addEventListener('DOMContentLoaded', function () {
         box.append(plus);
         const nm = document.createElement('div');
         nm.className = 'link-name';
-        if (NAME_INSIDE) { nm.textContent = 'Добавить'; box.append(nm); add.append(box); }
+        if (NAME_INSIDE) { nm.textContent = t('Добавить'); box.append(nm); add.append(box); }
         else { nm.textContent = '.'; nm.classList.add('ph'); add.append(box, nm); }
         add.addEventListener('click', () => openEditor(list, null));
         makeEndDropTarget(add, list);
@@ -1269,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderLinks() {
-        linksContainer.innerHTML = '';
+        linksContainer.replaceChildren();
         savedLinks.forEach((_, i) => linksContainer.appendChild(buildTile(savedLinks, i)));
         linksContainer.appendChild(buildAddTile(savedLinks));
         scheduleFill();
@@ -1283,7 +1456,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!f || !folderModal.classList.contains('open')) return;
         document.getElementById('folder-title').textContent = f.name;
         document.getElementById('folder-back').classList.toggle('hidden', folderStack.length < 2);
-        folderGrid.innerHTML = '';
+        folderGrid.replaceChildren();
         f.items.forEach((_, i) => folderGrid.appendChild(buildTile(f.items, i)));
         folderGrid.appendChild(buildAddTile(f.items));
     }
@@ -1314,8 +1487,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const qsList = document.getElementById('qs-list');
     let qsItems = [], qsIndex = 0;
 
-    const QS_FOLDER_SVG = '<svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>';
-    const QS_SEARCH_SVG = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>';
 
     function collectAll() {
         const out = [];
@@ -1347,19 +1518,26 @@ document.addEventListener('DOMContentLoaded', function () {
             qsItems.push({ type: 'web', q: raw });
         }
         qsIndex = Math.max(0, Math.min(qsIndex, qsItems.length - 1));
-        qsList.innerHTML = '';
+        qsList.replaceChildren();
         qsItems.forEach((it, i) => {
             const row = document.createElement('div');
             row.className = 'qs-row' + (i === qsIndex ? ' active' : '');
+            const addCells = (icon, title, sub) => {
+                const b = document.createElement('b'); b.textContent = title;
+                const sm = document.createElement('small'); sm.textContent = sub;
+                row.append(icon, b, sm);
+            };
             if (it.type === 'web') {
-                row.innerHTML = QS_SEARCH_SVG + '<b>Искать «' + escapeHtml(it.q) + '»</b><small>' + escapeHtml(currentEngine().name) + '</small>';
+                addCells(searchSvg(), t('Искать «{q}»', { q: it.q }), currentEngine().name);
             } else if (it.type === 'folder') {
                 const where = it.entry.path.map(f => f.name).join(' › ');
-                row.innerHTML = QS_FOLDER_SVG + '<b>' + escapeHtml(it.entry.item.name) + '</b><small>' + escapeHtml(where ? where : 'Папка') + '</small>';
+                addCells(folderSvg(), it.entry.item.name, where ? where : t('Папка'));
             } else {
                 const l = it.entry.item;
                 const where = it.entry.path.length ? it.entry.path.map(f => f.name).join(' › ') : (domainOf(l.url) || '');
-                row.innerHTML = '<img src="' + escapeHtml(l.icon || FALLBACK_ICON) + '" alt=""><b>' + escapeHtml(l.name) + '</b><small>' + escapeHtml(where) + '</small>';
+                const img = document.createElement('img');
+                img.alt = ''; img.src = l.icon || FALLBACK_ICON;
+                addCells(img, l.name, where);
             }
             row.addEventListener('mouseenter', () => {
                 qsIndex = i;
@@ -1418,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function parseBookmarksHtml(text) {
         const doc = new DOMParser().parseFromString(text, 'text/html');
         const rootDl = doc.querySelector('dl');
-        if (!rootDl) throw new Error('это не HTML-экспорт закладок браузера');
+        if (!rootDl) throw new Error(t('это не HTML-экспорт закладок браузера'));
         function walk(dl) {
             const items = [];
             for (const child of Array.from(dl.children)) {
@@ -1428,7 +1606,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const a = kids.find(c => c.tagName === 'A');
                 if (h3) {
                     const sub = kids.find(c => c.tagName === 'DL');
-                    items.push({ type: 'folder', name: h3.textContent.trim() || 'Папка', items: sub ? walk(sub) : [] });
+                    items.push({ type: 'folder', name: h3.textContent.trim() || t('Папка'), items: sub ? walk(sub) : [] });
                 } else if (a) {
                     const href = a.getAttribute('href') || '';
                     if (!/^https?:\/\//i.test(href)) continue;
@@ -1452,8 +1630,8 @@ document.addEventListener('DOMContentLoaded', function () {
         pickFile('.html,.htm', async file => {
             try {
                 const items = parseBookmarksHtml(await file.text());
-                if (!countLinks(items)) throw new Error('в файле не найдено закладок');
-                bmFlat = [{ name: 'Закладки', label: 'Все закладки', depth: 0, items }];
+                if (!countLinks(items)) throw new Error(t('в файле не найдено закладок'));
+                bmFlat = [{ name: t('Закладки'), label: t('Все закладки'), depth: 0, items }];
                 (function flat(list, depth) {
                     for (const it of list) if (isFolder(it)) {
                         bmFlat.push({ name: it.name, label: it.name, depth, items: it.items });
@@ -1461,18 +1639,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })(items, 1);
                 const listEl = document.getElementById('bm-list');
-                listEl.innerHTML = '';
+                listEl.replaceChildren();
                 bmFlat.forEach((e, i) => {
                     const n = countLinks(e.items);
                     if (!n) return;
                     const row = document.createElement('label');
                     row.className = 'bm-row';
                     row.style.paddingLeft = (8 + e.depth * 18) + 'px';
-                    row.innerHTML = `<input type="radio" name="bm" value="${i}" ${i === 0 ? 'checked' : ''}><span>${escapeHtml(e.label)}</span><em>${n}</em>`;
+                    const radio = document.createElement('input');
+                    radio.type = 'radio'; radio.name = 'bm'; radio.value = String(i); radio.checked = (i === 0);
+                    const sp = document.createElement('span'); sp.textContent = e.label;
+                    const em = document.createElement('em'); em.textContent = String(n);
+                    row.append(radio, sp, em);
                     listEl.appendChild(row);
                 });
                 bmModal.classList.add('open');
-            } catch (err) { alert('Не удалось прочитать закладки: ' + err.message); }
+            } catch (err) { alert(t('Не удалось прочитать закладки: {m}', { m: err.message })); }
         });
     });
     document.getElementById('bm-do').addEventListener('click', () => {
@@ -1482,13 +1664,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const copy = JSON.parse(JSON.stringify(e.items));
         savedLinks.push({ type: 'folder', name: e.name, items: copy });
         persist(); closeBm(); renderAll();
-        showToast('Добавлена папка «' + e.name + '»: ' + countLinks(copy) + ' закладок');
+        showToast(t('Добавлена папка «{n}»: {c} закладок', { n: e.name, c: countLinks(copy) }));
     });
 
     /* ---------- Обновление иконок ---------- */
     document.getElementById('refresh-icons').addEventListener('click', async () => {
         const btn = document.getElementById('refresh-icons');
-        btn.disabled = true; btn.textContent = 'Обновляю…';
+        btn.disabled = true; btn.textContent = t('Обновляю…');
         const cache = getStorage('savedFavicons', {});
         const touched = [];
         (function walk(list) {
@@ -1503,7 +1685,7 @@ document.addEventListener('DOMContentLoaded', function () {
         await fillMissingIcons(savedLinks);
         for (const it of touched) { if (!it.icon) it.icon = it._old || ''; delete it._old; }
         persist(); renderAll();
-        btn.disabled = false; btn.textContent = 'Обновить иконки сайтов';
+        btn.disabled = false; btn.textContent = t('Обновить иконки сайтов');
     });
 
     /* ===================== Работа с файлами ===================== */
@@ -1529,7 +1711,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 URL.revokeObjectURL(objUrl);
                 resolve(c.toDataURL(mime || 'image/jpeg', quality || 0.88));
             };
-            img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('Не удалось прочитать картинку')); };
+            img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error(t('Не удалось прочитать картинку'))); };
             img.src = objUrl;
         });
     }
@@ -1551,7 +1733,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             } catch (e) { settings.bgImage = prev; }
         }
-        alert('Картинка слишком большая для хранилища браузера. Выберите файл поменьше.');
+        alert(t('Картинка слишком большая для хранилища браузера. Выберите файл поменьше.'));
     }
 
     /* ===================== Панель настроек ===================== */
@@ -1596,6 +1778,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $('name-mode').value = settings.nameMode;
         $('show-search').checked = !!settings.showSearch;
         $('quick-search').checked = !!settings.quickSearch;
+        $('lang-select').value = settings.lang;
         $('blur-range').value = settings.bgBlur;
         $('blur-val').textContent = settings.bgBlur + 'px';
         $('bright-range').value = settings.bgBright;
@@ -1650,6 +1833,10 @@ document.addEventListener('DOMContentLoaded', function () {
     $('panel-angle').addEventListener('input', e => update(() => { settings.panelAngle = +e.target.value; }));
     $('blur-range').addEventListener('input', e => update(() => { settings.bgBlur = +e.target.value; }));
     $('bright-range').addEventListener('input', e => update(() => { settings.bgBright = +e.target.value; }));
+    $('lang-select').addEventListener('change', e => {
+        settings.lang = e.target.value;
+        saveSettings(); setLang(); refreshEngineUI(); renderAll(); syncSettingsUI();
+    });
     $('quick-search').addEventListener('change', e => update(() => { settings.quickSearch = e.target.checked; }));
     $('show-search').addEventListener('change', e => update(() => { settings.showSearch = e.target.checked; }));
 
@@ -1692,7 +1879,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Сброс
     $('reset-btn').addEventListener('click', () => {
-        if (!confirm('Сбросить фон, цвет шрифта и остальные настройки оформления? Ссылки останутся.')) return;
+        if (!confirm(t('Сбросить фон, цвет шрифта и остальные настройки оформления? Ссылки останутся.'))) return;
         settings = Object.assign({}, DEFAULTS);
         gradient = Object.assign({}, DEFAULT_GRADIENT);
         saveSettings(); saveGradient(); applyAppearance(); syncSettingsUI();
@@ -1774,13 +1961,13 @@ document.addEventListener('DOMContentLoaded', function () {
         for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) {
             if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
         }
-        if (e < 0) throw new Error('это не ZIP-архив');
+        if (e < 0) throw new Error(t('это не ZIP-архив'));
         const count = v.getUint16(e + 10, true);
         let p = v.getUint32(e + 16, true);
         const dec = new TextDecoder();
         const files = {};
         for (let i = 0; i < count; i++) {
-            if (v.getUint32(p, true) !== 0x02014b50) throw new Error('архив повреждён');
+            if (v.getUint32(p, true) !== 0x02014b50) throw new Error(t('архив повреждён'));
             const method = v.getUint16(p + 10, true), csize = v.getUint32(p + 20, true);
             const nl = v.getUint16(p + 28, true), el = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true);
             const lo = v.getUint32(p + 42, true);
@@ -1792,7 +1979,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (method === 8) {
                 const ds = new DecompressionStream('deflate-raw');
                 data = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer());
-            } else if (method !== 0) throw new Error('неподдерживаемое сжатие в архиве');
+            } else if (method !== 0) throw new Error(t('неподдерживаемое сжатие в архиве'));
             files[name] = data;
         }
         return files;
@@ -1800,8 +1987,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $('export-btn').addEventListener('click', async () => {
         const btn = $('export-btn');
-        const label = btn.innerHTML;
-        btn.disabled = true; btn.textContent = 'Готовлю архив…';
+        const saved = Array.from(btn.childNodes);
+        btn.disabled = true; btn.textContent = t('Готовлю архив…');
         try { await fillMissingIcons(savedLinks); } catch (e) {}
         const files = [];
         const exportSettings = Object.assign({}, settings);
@@ -1822,7 +2009,7 @@ document.addEventListener('DOMContentLoaded', function () {
         a.download = 'homepage_backup_' + new Date().toISOString().slice(0, 10) + '.zip';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        btn.disabled = false; btn.innerHTML = label;
+        btn.disabled = false; btn.replaceChildren(...saved);
     });
 
     $('import-btn').addEventListener('click', () => {
@@ -1831,12 +2018,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 let data, files = {};
                 if (/\.zip$/i.test(file.name)) {
                     files = await readZip(await file.arrayBuffer());
-                    if (!files['settings.json']) throw new Error('в архиве нет settings.json');
+                    if (!files['settings.json']) throw new Error(t('в архиве нет settings.json'));
                     data = JSON.parse(new TextDecoder().decode(files['settings.json']));
                 } else {
                     data = JSON.parse(await file.text());
                 }
-                if (!confirm('Импортировать данные? Текущие настройки будут перезаписаны.')) return;
+                if (!confirm(t('Импортировать данные? Текущие настройки будут перезаписаны.'))) return;
                 const resolveRef = async ref => {
                     if (typeof ref === 'string' && files[ref]) {
                         return bytesToDataUrl(files[ref], EXT_MIME[ref.split('.').pop().toLowerCase()] || 'application/octet-stream');
@@ -1857,10 +2044,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (data.savedFavicons) localStorage.setItem('savedFavicons', JSON.stringify(data.savedFavicons));
                     if (data.homeSettings) localStorage.setItem('homeSettings', JSON.stringify(data.homeSettings));
                 } catch (err) {
-                    alert('Не удалось сохранить: хранилище браузера переполнено.'); return;
+                    alert(t('Не удалось сохранить: хранилище браузера переполнено.')); return;
                 }
                 location.reload();
-            } catch (err) { alert('Ошибка при импорте: ' + err.message); }
+            } catch (err) { alert(t('Ошибка при импорте: {m}', { m: err.message })); }
         });
     });
 
@@ -1868,35 +2055,49 @@ document.addEventListener('DOMContentLoaded', function () {
     $('open-file-btn').addEventListener('click', () => {
         pickFile('.html,.htm,.txt,.json,.pdf,.jpg,.jpeg,.png,.gif,.webp', async file => {
             const name = file.name.toLowerCase();
-            const showPreview = html => {
+            const showPreview = (title, body) => {
                 const p = document.createElement('div');
                 p.className = 'file-preview';
-                p.innerHTML = '<span class="close-btn" title="Закрыть">×</span>' + html;
-                p.querySelector('.close-btn').addEventListener('click', () => p.remove());
+                const x = document.createElement('span');
+                x.className = 'close-btn'; x.title = t('Закрыть'); x.textContent = '×';
+                x.addEventListener('click', () => p.remove());
+                const h = document.createElement('h3');
+                h.style.marginTop = '0'; h.textContent = title;
+                p.append(x, h, body);
                 document.body.appendChild(p);
             };
+            const pre = (text, wrap) => {
+                const e = document.createElement('pre');
+                if (wrap) e.style.whiteSpace = 'pre-wrap';
+                e.textContent = text;
+                return e;
+            };
             try {
-                if (/\.(html?)$/.test(name)) {
-                    const w = window.open('', '_blank');
-                    w.document.write(await file.text()); w.document.close();
+                if (/\.(html?|txt)$/.test(name)) {
+                    showPreview(file.name, pre(await file.text(), true));
                 } else if (name.endsWith('.json')) {
                     const text = await file.text();
                     let body;
                     try { body = JSON.stringify(JSON.parse(text), null, 2); } catch { body = text; }
-                    showPreview(`<h3 style="margin-top:0">${escapeHtml(file.name)}</h3><pre>${escapeHtml(body)}</pre>`);
-                } else if (name.endsWith('.txt')) {
-                    showPreview(`<h3 style="margin-top:0">${escapeHtml(file.name)}</h3><pre style="white-space:pre-wrap">${escapeHtml(await file.text())}</pre>`);
+                    showPreview(file.name, pre(body, false));
                 } else if (/\.(jpe?g|png|gif|webp)$/.test(name)) {
-                    showPreview(`<h3 style="margin-top:0">${escapeHtml(file.name)}</h3><div style="text-align:center"><img src="${URL.createObjectURL(file)}" style="max-width:100%;max-height:60vh;border-radius:8px"></div>`);
+                    const wrap = document.createElement('div');
+                    wrap.style.textAlign = 'center';
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.style.cssText = 'max-width:100%;max-height:60vh;border-radius:8px';
+                    wrap.append(img);
+                    showPreview(file.name, wrap);
                 } else {
                     window.open(URL.createObjectURL(file), '_blank');
                 }
-            } catch (err) { alert('Ошибка чтения файла: ' + err.message); }
+            } catch (err) { alert(t('Ошибка чтения файла: {m}', { m: err.message })); }
         });
     });
 
     /* ===================== Старт ===================== */
     window.addEventListener('resize', applyAppearance);
+    setLang();
     applyAppearance();
     syncSettingsUI();
     renderLinks();
