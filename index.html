@@ -12,10 +12,14 @@
         --cols: 5;
         --bg-blur: 0px;
         --bg-bright: 1;
-        --tile-radius: 13%;
+        --tile-radius: 6px;
         --panel-field: rgba(255,255,255,0.08);
         --panel-field-hover: rgba(255,255,255,0.16);
-        --tile: 110px;
+        --tw: 270px;
+        --th: 150px;
+        --ico: 64px;
+        --tfs: 15px;
+        --fmini: 76px;
         --row-gap: 15px;
         --grid-w: 1170px;
         --panel-bg: rgba(24, 18, 15, 0.96);
@@ -117,24 +121,21 @@
         justify-items: center;
     }
     .link-item {
-        width: var(--tile);
+        position: relative; width: var(--tw);
         display: flex; flex-direction: column; align-items: center;
-        text-decoration: none; color: var(--text);
-        cursor: pointer;
+        text-decoration: none; color: var(--text); cursor: pointer;
     }
     .link-icon {
-        width: var(--tile); height: var(--tile);
+        position: relative; width: var(--tw); height: var(--th); overflow: hidden;
         border-radius: var(--tile-radius);
-        background: rgba(28, 16, 10, var(--tile-alpha));
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        transition: transform .15s ease, background .15s ease;
+        background: var(--tbg, rgba(28, 16, 10, var(--tile-alpha)));
+        color: var(--tfg, var(--text));
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: calc(var(--th) * 0.07);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+        transition: transform .15s ease, filter .15s ease;
     }
-    .link-item:hover .link-icon {
-        transform: translateY(-3px);
-        background: rgba(40, 22, 13, calc(var(--tile-alpha) + 0.12));
-    }
-    .link-item { position: relative; }
+    .link-item:hover .link-icon { transform: translateY(-3px); filter: brightness(1.08); }
     .del-btn {
         position: absolute; top: -7px; right: -7px; z-index: 3;
         width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%;
@@ -146,32 +147,41 @@
     }
     .link-item:hover .del-btn { opacity: 1; transform: scale(1); }
     .del-btn:hover { background: #c0392b; }
-    .link-icon { overflow: hidden; }
-    body.icon-fill .link-icon img {
-        width: 100%; height: 100%;
-        border-radius: 0;
-        object-fit: cover;
+    .link-icon > img { width: var(--ico); height: var(--ico); object-fit: contain; border-radius: 12px; }
+    /* карточка: иконка в белой плашке на цветном фоне */
+    .badge {
+        display: flex; width: var(--ico); height: var(--ico); padding: calc(var(--ico) * 0.14);
+        background: #fff; border-radius: calc(var(--ico) * 0.22); box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     }
-    .link-icon img {
-        width: calc(var(--tile) * 0.58); height: calc(var(--tile) * 0.58);
-        object-fit: contain;
-        border-radius: 12px;
+    .badge img { width: 100%; height: 100%; object-fit: contain; }
+    .t-letter {
+        display: flex; align-items: center; justify-content: center; width: var(--ico); height: var(--ico);
+        font-size: calc(var(--ico) * 0.85); font-weight: 600; line-height: 1;
     }
+    /* иконка на весь ярлык */
+    body.t-fill .link-icon > img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
+    /* название под ярлыком */
     .link-name {
-        margin-top: 6px;
-        width: var(--tile);
-        font-size: 13px; line-height: 18px; height: 18px;
-        text-align: center;
+        margin-top: 6px; width: var(--tw); height: 18px;
+        font-size: 13px; line-height: 18px; text-align: center;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        color: var(--text);
-        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        color: var(--text); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
     }
-    .add-item .link-icon {
-        width: calc(var(--tile) * 0.91); height: calc(var(--tile) * 0.91); margin: calc(var(--tile) * 0.02) 0 0;
-        font-size: 18px; color: var(--text);
-        background: rgba(28, 16, 10, calc(var(--tile-alpha) - 0.08));
+    /* название внутри ярлыка */
+    .link-icon .link-name {
+        margin: 0; width: 92%; height: auto; font-size: var(--tfs); line-height: 1.3;
+        color: inherit; text-shadow: none;
     }
-    .add-item .link-name { visibility: hidden; margin-top: 11px; }
+    body.t-fill .link-icon .link-name {
+        position: absolute; left: 0; right: 0; bottom: 0; width: 100%; padding: 20px 8px 7px;
+        color: #fff; background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    }
+    .fmini { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6%; width: var(--fmini); height: var(--fmini); }
+    .fmini img { width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 22%; padding: 10%; }
+    .fmini svg { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
+    .add-item .link-icon { background: rgba(255,255,255,0.14); border: 2px dashed rgba(255,255,255,0.45); box-shadow: none; color: var(--text); }
+    .add-item .plus { font-size: calc(var(--ico) * 0.75); font-weight: 300; line-height: 1; }
+    .add-item .link-name.ph { visibility: hidden; }
 
     /* ---------- Кнопка-шестерёнка ---------- */
     .gear-btn {
@@ -227,6 +237,9 @@
     .btn:hover { background: var(--panel-field-hover); }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
     .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .color-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; font-size: 14px; color: var(--panel-text); }
+    .color-row input[type="color"] { width: 40px; height: 30px; padding: 0; border: 1px solid var(--panel-line); border-radius: 6px; background: none; cursor: pointer; }
+    #edit-color-note { color: var(--panel-muted); font-size: 13px; }
     .shape-btns { display: flex; gap: 6px; flex: 1; }
     .shape-btn {
         width: 36px; height: 36px; padding: 0; border-radius: 8px; cursor: pointer;
@@ -291,9 +304,6 @@
     .close-btn:hover { color: var(--panel-text); }
 
     /* ---------- Папки ---------- */
-    .folder-icon { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6%; padding: 14%; }
-    body .link-icon.folder-icon img { width: 100%; height: 100%; border-radius: 22%; object-fit: cover; }
-    .folder-icon svg { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: none; stroke: var(--text); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.8; }
     #folder-modal { z-index: 1500; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
     .folder-card {
         --text: #f5ede8;
@@ -310,7 +320,7 @@
     }
     .folder-head button:hover { background: rgba(255,255,255,0.2); }
     .folder-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--tile) + 24px), 1fr));
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--tw) + 24px), 1fr));
         row-gap: var(--row-gap); justify-items: center;
     }
     .toast {
@@ -332,7 +342,7 @@
     /* ---------- Перетаскивание ---------- */
     .link-item.dragging { opacity: 0.35; }
     .link-item.drop-before::before, .link-item.drop-after::after {
-        content: ''; position: absolute; top: 0; height: var(--tile); width: 4px; z-index: 4;
+        content: ''; position: absolute; top: 0; height: var(--th); width: 4px; z-index: 4;
         background: var(--accent); border-radius: 2px; pointer-events: none;
     }
     .link-item.drop-before::before { left: -11px; }
@@ -471,16 +481,42 @@
         <span class="val" id="gridw-val"></span>
     </div>
     <div class="row">
-        <label>Размер ярлыков</label>
-        <input type="range" id="tile-size-range" min="50" max="180" step="1">
-        <span class="val" id="tile-size-val"></span>
+        <label>Ширина ярлыка</label>
+        <input type="range" id="tile-w-range" min="60" max="420" step="2">
+        <span class="val" id="tile-w-val"></span>
+    </div>
+    <div class="row">
+        <label>Высота ярлыка</label>
+        <input type="range" id="tile-h-range" min="40" max="320" step="2">
+        <span class="val" id="tile-h-val"></span>
+    </div>
+    <div class="btn-row" id="ratio-btns">
+        <button type="button" class="btn" data-ratio="1">Квадрат</button>
+        <button type="button" class="btn" data-ratio="1.4">4:3</button>
+        <button type="button" class="btn" data-ratio="1.8">Широкий</button>
+    </div>
+    <div class="row">
+        <label>Стиль ярлыка</label>
+        <select id="tile-style" style="flex:1">
+            <option value="card">Карточка (цвет по иконке)</option>
+            <option value="dark">Тёмная плитка</option>
+            <option value="fill">Иконка на весь ярлык</option>
+        </select>
+    </div>
+    <div class="row">
+        <label>Название</label>
+        <select id="name-mode" style="flex:1">
+            <option value="auto">Авто (внутри у широких)</option>
+            <option value="inside">Внутри ярлыка</option>
+            <option value="below">Под ярлыком</option>
+        </select>
     </div>
     <div class="row">
         <label>Форма ярлыков</label>
         <div class="shape-btns" id="shape-btns">
             <button type="button" class="shape-btn" data-r="0" title="Квадрат"><i style="border-radius:0"></i></button>
-            <button type="button" class="shape-btn" data-r="13" title="Скруглённый"><i style="border-radius:4px"></i></button>
-            <button type="button" class="shape-btn" data-r="30" title="Мягкий"><i style="border-radius:8px"></i></button>
+            <button type="button" class="shape-btn" data-r="4" title="Слегка скруглённый"><i style="border-radius:4px"></i></button>
+            <button type="button" class="shape-btn" data-r="13" title="Мягкий"><i style="border-radius:8px"></i></button>
             <button type="button" class="shape-btn" data-r="50" title="Круг"><i style="border-radius:50%"></i></button>
         </div>
     </div>
@@ -489,7 +525,6 @@
         <input type="range" id="radius-range" min="0" max="50" step="1">
         <span class="val" id="radius-val"></span>
     </div>
-    <label class="check"><input type="checkbox" id="icon-fill"> Иконка сайта на весь ярлык</label>
     <div class="btn-row"><button class="btn" id="refresh-icons">Обновить иконки сайтов</button></div>
     <label class="check"><input type="checkbox" id="show-search"> Показывать строку поиска</label>
     <label class="check"><input type="checkbox" id="quick-search"> Быстрый поиск: печатайте прямо на странице</label>
@@ -535,6 +570,12 @@
             <input class="edit-input" placeholder="URL иконки (необязательно)" id="edit-icon">
             <div style="margin-bottom:10px">
                 <button class="btn" id="edit-icon-upload" style="width:100%">Загрузить иконку с компьютера</button>
+            </div>
+            <div class="color-row">
+                <span>Цвет ярлыка</span>
+                <input type="color" id="edit-color">
+                <button type="button" class="btn" id="edit-color-auto">Авто</button>
+                <span id="edit-color-note"></span>
             </div>
         </div>
         <div class="edit-buttons">
@@ -607,12 +648,14 @@ document.addEventListener('DOMContentLoaded', function () {
         cols: 5,
         rowGap: 15,
         gridWidth: 1170,
-        tileSize: 110,
-        iconFill: true,
+        tileW: 270,
+        tileH: 150,
+        tileStyle: 'card',
+        nameMode: 'auto',
         bgBlur: 0,
         bgBright: 100,
         quickSearch: true,
-        tileRadius: 13,
+        tileRadius: 4,
         engine: 0,
         panelGradient: false,
         panelColor1: '#3a2216',
@@ -683,6 +726,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     function lightness(h) { const [r, g, b] = hexToRgb(h); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; }
     function rgba(h, a) { const [r, g, b] = hexToRgb(h); return `rgba(${r},${g},${b},${a})`; }
+    function rgbToHex(r, g, b) { return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
+    function hashHue(str) { let h = 0; for (const ch of String(str)) h = (h * 31 + ch.codePointAt(0)) >>> 0; return h % 360; }
+    // Основной цвет иконки (для фона ярлыка): среднее по непрозрачным, не белым пикселям, с упором на насыщенные
+    function dominantColor(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const c = document.createElement('canvas'); c.width = c.height = 16;
+                    const x = c.getContext('2d'); x.drawImage(img, 0, 0, 16, 16);
+                    const d = x.getImageData(0, 0, 16, 16).data;
+                    let r = 0, g = 0, b = 0, w = 0;
+                    for (let i = 0; i < d.length; i += 4) {
+                        if (d[i + 3] < 140) continue;
+                        const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+                        if ((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255 > 0.93) continue;
+                        const wt = 0.1 + (mx ? (mx - mn) / mx : 0);
+                        r += d[i] * wt; g += d[i + 1] * wt; b += d[i + 2] * wt; w += wt;
+                    }
+                    resolve(w ? rgbToHex(r / w, g / w, b / w) : null);
+                } catch (e) { resolve(null); }
+            };
+            img.onerror = () => resolve(null);
+            img.src = src;
+        });
+    }
 
     // Фон окон настроек: обычный или градиент; цвет текста подбирается под яркость
     function applyPanelTheme() {
@@ -702,6 +771,7 @@ document.addEventListener('DOMContentLoaded', function () {
         root.style.setProperty('--panel-field-hover', light ? 'rgba(0,0,0,0.14)' : 'rgba(255,255,255,0.16)');
     }
 
+    let NAME_INSIDE = true;
     function applyAppearance() {
         root.style.setProperty('--text', settings.textColor);
         root.style.setProperty('--tile-alpha', settings.tileOpacity / 100);
@@ -709,10 +779,19 @@ document.addEventListener('DOMContentLoaded', function () {
         root.style.setProperty('--cols', settings.cols);
         root.style.setProperty('--row-gap', settings.rowGap + 'px');
         root.style.setProperty('--grid-w', settings.gridWidth + 'px');
-        root.style.setProperty('--tile', settings.tileSize + 'px');
+        // размеры ярлыка: не шире ячейки сетки, пропорции сохраняются
+        const cellW = Math.min(settings.gridWidth, window.innerWidth - 40) / settings.cols;
+        const k = Math.min(1, (cellW - Math.max(10, settings.rowGap)) / settings.tileW);
+        const tw = Math.max(40, Math.round(settings.tileW * k)), th = Math.max(36, Math.round(settings.tileH * k));
+        NAME_INSIDE = settings.nameMode === 'inside' || (settings.nameMode === 'auto' && (settings.tileStyle === 'card' || tw > th * 1.15));
+        root.style.setProperty('--tw', tw + 'px');
+        root.style.setProperty('--th', th + 'px');
+        root.style.setProperty('--ico', Math.max(22, Math.round(NAME_INSIDE ? th * 0.44 : Math.min(tw, th) * 0.58)) + 'px');
+        root.style.setProperty('--fmini', Math.max(22, Math.round(NAME_INSIDE ? th * 0.5 : Math.min(tw, th) * 0.7)) + 'px');
+        root.style.setProperty('--tfs', (NAME_INSIDE ? Math.max(11, Math.min(16, Math.round(th * 0.115))) : 13) + 'px');
         document.body.classList.toggle('with-search', !!settings.showSearch);
-        document.body.classList.toggle('icon-fill', !!settings.iconFill);
-        root.style.setProperty('--tile-radius', settings.tileRadius + '%');
+        document.body.classList.toggle('t-fill', settings.tileStyle === 'fill');
+        root.style.setProperty('--tile-radius', Math.round(settings.tileRadius / 100 * Math.min(tw, th)) + 'px');
         root.style.setProperty('--bg-blur', settings.bgBlur + 'px');
         root.style.setProperty('--bg-bright', settings.bgBright / 100);
         applyPanelTheme();
@@ -877,17 +956,25 @@ document.addEventListener('DOMContentLoaded', function () {
         (function walk(list, depth) {
             for (const it of list) {
                 if (isFolder(it)) walk(it.items || [], depth + 1);
-                else if (!it.icon) todo.push({ it, sz: depth === 0 ? 256 : 128 });
+                else if (!it.icon || it.icon === FALLBACK_ICON) todo.push({ it, sz: depth === 0 ? 256 : 128 });
+                else if (it.autoBg === undefined && it.icon.startsWith('data:')) todo.push({ it, sz: 0, colorOnly: true });
             }
         })(items, 0);
         const queue = todo.slice();
         let done = 0, changed = false;
         async function worker() {
             while (queue.length) {
-                const { it, sz } = queue.shift();
+                const { it, sz, colorOnly } = queue.shift();
+                if (colorOnly) {
+                    it.autoBg = (await dominantColor(it.icon)) || '';
+                    changed = true;
+                    done++;
+                    if (onProgress) onProgress(done, todo.length);
+                    continue;
+                }
                 const d = domainOf(it.url);
                 const data = d ? await iconForDomain(d, sz) : null;
-                if (data) { it.icon = data; it.auto = true; changed = true; }
+                if (data) { it.icon = data; it.auto = true; it.autoBg = (await dominantColor(data)) || ''; changed = true; }
                 done++;
                 if (onProgress) onProgress(done, todo.length);
             }
@@ -901,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function scheduleFill() {
         if (filling) return;
         let missing = false;
-        (function w(list) { for (const it of list) { if (isFolder(it)) w(it.items || []); else if (!it.icon) missing = true; } })(savedLinks);
+        (function w(list) { for (const it of list) { if (isFolder(it)) w(it.items || []); else if (!it.icon || it.icon === FALLBACK_ICON || (it.autoBg === undefined && it.icon.startsWith('data:'))) missing = true; } })(savedLinks);
         if (!missing) return;
         filling = true;
         let shown = false;
@@ -924,6 +1011,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ---------- Редактор ---------- */
+    let editColor = null;
+    function updateColorNote() { document.getElementById('edit-color-note').textContent = editColor ? '' : 'авто'; }
+    document.getElementById('edit-color').addEventListener('input', e => { editColor = e.target.value; updateColorNote(); });
+    document.getElementById('edit-color-auto').addEventListener('click', () => { editColor = null; updateColorNote(); });
     function openEditor(list, index, kind) {
         editList = list; editIndex = index;
         const item = index === null
@@ -939,6 +1030,9 @@ document.addEventListener('DOMContentLoaded', function () {
             iconInput.value = item.icon && !item.icon.startsWith('data:') ? item.icon : '';
             faviconPreview.src = item.icon || FALLBACK_ICON;
             delete faviconPreview.dataset.custom;
+            editColor = item.bg || null;
+            document.getElementById('edit-color').value = item.bg || item.autoBg || '#3d4a5c';
+            updateColorNote();
         }
         document.getElementById('edit-delete').style.visibility = index === null ? 'hidden' : 'visible';
         modal.classList.add('open');
@@ -985,15 +1079,19 @@ document.addEventListener('DOMContentLoaded', function () {
             let icon = iconInput.value.trim();
             let auto = false;
             if (!icon && faviconPreview.dataset.custom) icon = faviconPreview.dataset.custom;
-            if (!icon) { icon = await getFaviconUrl(url); auto = true; }
+            if (!icon) { icon = await getFaviconUrl(url); auto = true; if (icon === FALLBACK_ICON) icon = ''; }
             delete faviconPreview.dataset.custom;
+            const old = editIndex !== null ? editList[editIndex] : null;
             const item = { name, url, icon };
             if (auto) item.auto = true;
+            if (old && old.icon === icon && old.autoBg !== undefined) item.autoBg = old.autoBg;
+            if (editColor) item.bg = editColor;
             if (editIndex !== null) editList[editIndex] = item; else editList.push(item);
         }
         persist();
         closeEditor();
         renderAll();
+        scheduleFill();
     });
 
     document.getElementById('edit-delete').addEventListener('click', () => {
@@ -1088,26 +1186,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const firstLetter = n => (String(n || '?').trim().charAt(0) || '?').toUpperCase();
+    function tileBg(item) {
+        if (item.bg) return item.bg;
+        if (settings.tileStyle === 'card') return item.autoBg || ('hsl(' + hashHue(item.name || item.url || '') + ' 42% 36%)');
+        return null;
+    }
+    function tileFg(bg) { return /^#/.test(bg) ? (lightness(bg) > 0.62 ? '#1d1d1d' : '#ffffff') : '#ffffff'; }
+    function letterNode(item) { const l = document.createElement('div'); l.className = 't-letter'; l.textContent = firstLetter(item.name); return l; }
+    function iconNode(item) {
+        const hasIcon = item.icon && item.icon !== FALLBACK_ICON;
+        if (!hasIcon && settings.tileStyle === 'card') return letterNode(item);
+        const img = new Image();
+        img.alt = ''; img.draggable = false;
+        img.src = hasIcon ? item.icon : FALLBACK_ICON;
+        if (settings.tileStyle === 'card') {
+            const b = document.createElement('div');
+            b.className = 'badge';
+            b.append(img);
+            img.onerror = () => b.replaceWith(letterNode(item));
+            return b;
+        }
+        return img;
+    }
+
     function buildTile(list, index) {
-        const item = list[index];
-        let el;
-        if (isFolder(item)) {
-            el = document.createElement('div');
-            el.className = 'link-item folder-item';
+        const item = list[index], folder = isFolder(item);
+        const el = document.createElement(folder ? 'div' : 'a');
+        el.className = 'link-item' + (folder ? ' folder-item' : '');
+        const box = document.createElement('div');
+        box.className = 'link-icon';
+        if (folder) {
+            const mini = document.createElement('div');
+            mini.className = 'fmini';
             const minis = [];
-            (function pick(l) { for (const x of l) { if (minis.length >= 4) return; if (isFolder(x)) pick(x.items || []); else minis.push(x); } })(item.items || []);
-            el.innerHTML = `
-                <div class="link-icon folder-icon">${minis.length ? minis.map(m => `<img src="${escapeHtml(m.icon || FALLBACK_ICON)}" alt="">`).join('') : FOLDER_SVG}</div>
-                <div class="link-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>`;
+            (function pick(l) { for (const x of l) { if (minis.length >= 4) return; if (isFolder(x)) pick(x.items || []); else if (x.icon && x.icon !== FALLBACK_ICON) minis.push(x); } })(item.items || []);
+            if (minis.length) minis.forEach(m => { const i = new Image(); i.src = m.icon; i.alt = ''; i.draggable = false; mini.append(i); });
+            else mini.innerHTML = FOLDER_SVG;
+            box.append(mini);
+            if (item.bg) { box.style.setProperty('--tbg', item.bg); box.style.setProperty('--tfg', tileFg(item.bg)); }
             el.addEventListener('click', () => openFolder(item));
         } else {
-            el = document.createElement('a');
-            el.className = 'link-item';
             el.href = item.url;
-            el.innerHTML = `
-                <div class="link-icon"><img src="${escapeHtml(item.icon || FALLBACK_ICON)}" alt="" loading="lazy"></div>
-                <div class="link-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>`;
+            const bg = tileBg(item);
+            if (bg) { box.style.setProperty('--tbg', bg); box.style.setProperty('--tfg', tileFg(bg)); }
+            box.append(iconNode(item));
         }
+        const name = document.createElement('div');
+        name.className = 'link-name';
+        name.title = item.name;
+        name.textContent = item.name;
+        if (NAME_INSIDE) { box.append(name); el.append(box); }
+        else el.append(box, name);
+
         el.addEventListener('contextmenu', e => { e.preventDefault(); openEditor(list, index); });
         const del = document.createElement('button');
         del.type = 'button'; del.className = 'del-btn'; del.title = 'Удалить'; del.textContent = '×';
@@ -1123,7 +1254,15 @@ document.addEventListener('DOMContentLoaded', function () {
     function buildAddTile(list) {
         const add = document.createElement('div');
         add.className = 'link-item add-item';
-        add.innerHTML = '<div class="link-icon">+</div><div class="link-name">.</div>';
+        const box = document.createElement('div');
+        box.className = 'link-icon';
+        const plus = document.createElement('div');
+        plus.className = 'plus'; plus.textContent = '+';
+        box.append(plus);
+        const nm = document.createElement('div');
+        nm.className = 'link-name';
+        if (NAME_INSIDE) { nm.textContent = 'Добавить'; box.append(nm); add.append(box); }
+        else { nm.textContent = '.'; nm.classList.add('ph'); add.append(box, nm); }
         add.addEventListener('click', () => openEditor(list, null));
         makeEndDropTarget(add, list);
         return add;
@@ -1449,10 +1588,13 @@ document.addEventListener('DOMContentLoaded', function () {
         $('rowgap-val').textContent = settings.rowGap + 'px';
         $('gridw-range').value = settings.gridWidth;
         $('gridw-val').textContent = settings.gridWidth + 'px';
-        $('tile-size-range').value = settings.tileSize;
-        $('tile-size-val').textContent = settings.tileSize + 'px';
+        $('tile-w-range').value = settings.tileW;
+        $('tile-w-val').textContent = settings.tileW + 'px';
+        $('tile-h-range').value = settings.tileH;
+        $('tile-h-val').textContent = settings.tileH + 'px';
+        $('tile-style').value = settings.tileStyle;
+        $('name-mode').value = settings.nameMode;
         $('show-search').checked = !!settings.showSearch;
-        $('icon-fill').checked = !!settings.iconFill;
         $('quick-search').checked = !!settings.quickSearch;
         $('blur-range').value = settings.bgBlur;
         $('blur-val').textContent = settings.bgBlur + 'px';
@@ -1473,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $('gradient-angle').value = gradient.angle;
     }
 
-    function update(fn) { fn(); saveSettings(); applyAppearance(); syncSettingsUI(); }
+    function update(fn, rerender) { fn(); saveSettings(); applyAppearance(); syncSettingsUI(); if (rerender) renderAll(); }
 
     $('bg-mode').addEventListener('change', e => update(() => { settings.bgMode = e.target.value; }));
     $('bg-upload').addEventListener('click', () => pickFile('image/*', setBackgroundFromFile));
@@ -1491,7 +1633,13 @@ document.addEventListener('DOMContentLoaded', function () {
     $('cols-range').addEventListener('input', e => update(() => { settings.cols = +e.target.value; }));
     $('rowgap-range').addEventListener('input', e => update(() => { settings.rowGap = +e.target.value; }));
     $('gridw-range').addEventListener('input', e => update(() => { settings.gridWidth = +e.target.value; }));
-    $('tile-size-range').addEventListener('input', e => update(() => { settings.tileSize = +e.target.value; }));
+    $('tile-w-range').addEventListener('input', e => update(() => { settings.tileW = +e.target.value; }, true));
+    $('tile-h-range').addEventListener('input', e => update(() => { settings.tileH = +e.target.value; }, true));
+    document.querySelectorAll('#ratio-btns [data-ratio]').forEach(b => b.addEventListener('click', () => {
+        update(() => { settings.tileH = Math.round(settings.tileW / parseFloat(b.dataset.ratio)); }, true);
+    }));
+    $('tile-style').addEventListener('change', e => update(() => { settings.tileStyle = e.target.value; }, true));
+    $('name-mode').addEventListener('change', e => update(() => { settings.nameMode = e.target.value; }, true));
     $('radius-range').addEventListener('input', e => update(() => { settings.tileRadius = +e.target.value; }));
     document.querySelectorAll('#shape-btns .shape-btn').forEach(b => {
         b.addEventListener('click', () => update(() => { settings.tileRadius = +b.dataset.r; }));
@@ -1503,7 +1651,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $('blur-range').addEventListener('input', e => update(() => { settings.bgBlur = +e.target.value; }));
     $('bright-range').addEventListener('input', e => update(() => { settings.bgBright = +e.target.value; }));
     $('quick-search').addEventListener('change', e => update(() => { settings.quickSearch = e.target.checked; }));
-    $('icon-fill').addEventListener('change', e => update(() => { settings.iconFill = e.target.checked; }));
     $('show-search').addEventListener('change', e => update(() => { settings.showSearch = e.target.checked; }));
 
     // Быстрые цвета текста
@@ -1749,6 +1896,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* ===================== Старт ===================== */
+    window.addEventListener('resize', applyAppearance);
     applyAppearance();
     syncSettingsUI();
     renderLinks();
