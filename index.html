@@ -668,7 +668,6 @@
 
     <h4>Синхронизация (GitHub Gist)</h4>
     <div class="row"><label>Токен GitHub</label><input type="password" class="text-input" id="sync-token" placeholder="ghp_… (право gist)" autocomplete="off" style="flex:1"></div>
-    <div class="row"><label>Gist ID</label><input type="text" class="text-input" id="sync-gist" placeholder="появится после первой отправки" autocomplete="off" style="flex:1"></div>
     <div class="row"><label>Пароль шифрования</label><input type="password" class="text-input" id="sync-pass" placeholder="рекомендуется" autocomplete="new-password" style="flex:1"></div>
     <div class="row"><label>Что синхронизировать</label>
         <select id="sync-scope" style="flex:1">
@@ -938,7 +937,7 @@ function main() {
  "Нужен пароль шифрования": "The encryption password is required",
  "Неверный пароль или данные повреждены": "Wrong password or the data is corrupted",
  "Введите токен GitHub": "Enter your GitHub token",
- "Введите Gist ID": "Enter the Gist ID",
+ "Gist с данными не найден. Сначала нажмите «Отправить в Gist» на другом устройстве.": "No Gist with page data found. Press “Push to Gist” on another device first.",
  "Отправляю…": "Sending…",
  "Загружаю…": "Loading…",
  "Отправлено в Gist": "Pushed to Gist",
@@ -2823,12 +2822,11 @@ function main() {
 
 
     /* ===================== Синхронизация: GitHub Gist + шифрование ===================== */
-    const syncEls = { token: $('sync-token'), gist: $('sync-gist'), pass: $('sync-pass'), scope: $('sync-scope'), remember: $('sync-remember'), status: $('sync-status') };
-    const syncCfg = Object.assign({ gistId: '', remember: false, scope: 'links', lastSync: 0, token: '', pass: '' }, getStorage('syncCfg', {}));
+    const syncEls = { token: $('sync-token'), pass: $('sync-pass'), scope: $('sync-scope'), remember: $('sync-remember'), status: $('sync-status') };
+    const syncCfg = Object.assign({ gistId: '', gistKey: '', remember: false, scope: 'links', lastSync: 0, token: '', pass: '' }, getStorage('syncCfg', {}));
     function syncFillUI() {
         syncEls.token.value = syncCfg.token || '';
         syncEls.pass.value = syncCfg.pass || '';
-        syncEls.gist.value = syncCfg.gistId || '';
         syncEls.scope.value = syncCfg.scope;
         syncEls.remember.checked = !!syncCfg.remember;
         syncSetStatus(syncCfg.lastSync ? t('Последняя синхронизация: {t}', { t: new Date(syncCfg.lastSync).toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US') }) : '');
@@ -2837,7 +2835,6 @@ function main() {
     function syncRead() {
         syncCfg.token = syncEls.token.value.trim();
         syncCfg.pass = syncEls.pass.value;
-        syncCfg.gistId = syncEls.gist.value.trim();
         syncCfg.scope = syncEls.scope.value;
         syncCfg.remember = syncEls.remember.checked;
     }
@@ -2846,7 +2843,7 @@ function main() {
         if (!keep.remember) { keep.token = ''; keep.pass = ''; }
         setStorage('syncCfg', keep);
     }
-    ['change', 'input'].forEach(ev => [syncEls.token, syncEls.gist, syncEls.pass, syncEls.scope, syncEls.remember].forEach(el => el.addEventListener(ev, () => { syncRead(); syncSave(); })));
+    ['change', 'input'].forEach(ev => [syncEls.token, syncEls.pass, syncEls.scope, syncEls.remember].forEach(el => el.addEventListener(ev, () => { syncRead(); syncSave(); })));
 
     const toB64 = bytes => { let str = ''; for (let i = 0; i < bytes.length; i += 0x8000) str += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(str); };
     const fromB64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
@@ -2897,6 +2894,34 @@ function main() {
         }
         return r.json();
     }
+    /* Gist ищется автоматически по имени файла среди Gist'ов владельца токена.
+       Найденный ID запоминается вместе с отпечатком токена, чтобы не искать каждый раз. */
+    const SYNC_FILE = 'homepage-sync.json';
+    async function syncTokenKey() {
+        const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(syncCfg.token)));
+        return Array.from(h.subarray(0, 8), b => b.toString(16).padStart(2, '0')).join('');
+    }
+    async function syncRememberGist(id) {
+        syncCfg.gistId = id; syncCfg.gistKey = id ? await syncTokenKey() : '';
+    }
+    async function syncFindGist() {
+        if (syncCfg.gistId && syncCfg.gistKey === await syncTokenKey()) {
+            try {
+                const g = await ghApi('GET', '/gists/' + encodeURIComponent(syncCfg.gistId));
+                if (g.files && g.files[SYNC_FILE]) return g;
+            } catch (e) { if (!/^404\b/.test(e.message)) throw e; }
+        }
+        await syncRememberGist('');
+        let best = null;
+        for (let page = 1; page <= 10; page++) {
+            const list = await ghApi('GET', '/gists?per_page=100&page=' + page);
+            list.forEach(g => { if (g.files && g.files[SYNC_FILE] && (!best || g.updated_at > best.updated_at)) best = g; });
+            if (list.length < 100) break;
+        }
+        if (!best) return null;
+        await syncRememberGist(best.id);
+        return ghApi('GET', '/gists/' + encodeURIComponent(best.id));
+    }
     const syncBusy = (btn, on) => { btn.disabled = on; };
     $('sync-push').addEventListener('click', async () => {
         syncRead();
@@ -2912,16 +2937,15 @@ function main() {
                 payload.settings = st; payload.gradient = gradient;
             }
             const { header, parts } = await packPayload(payload, syncCfg.pass);
-            const files = { 'homepage-sync.json': { content: JSON.stringify(header) } };
+            const files = { [SYNC_FILE]: { content: JSON.stringify(header) } };
             parts.forEach((part, i) => { files['data-' + String(i + 1).padStart(3, '0') + '.txt'] = { content: part }; });
-            let gist;
-            if (syncCfg.gistId) {
-                const old = await ghApi('GET', '/gists/' + encodeURIComponent(syncCfg.gistId));
+            const old = await syncFindGist();
+            if (old) {
                 Object.keys(old.files || {}).forEach(name => { if (/^data-\d+\.txt$/.test(name) && !files[name]) files[name] = null; });
-                gist = await ghApi('PATCH', '/gists/' + encodeURIComponent(syncCfg.gistId), { files });
+                await ghApi('PATCH', '/gists/' + encodeURIComponent(old.id), { files });
             } else {
-                gist = await ghApi('POST', '/gists', { description: 'Home page sync (generated, do not edit)', public: false, files });
-                syncCfg.gistId = gist.id; syncEls.gist.value = gist.id;
+                const created = await ghApi('POST', '/gists', { description: 'Home page sync (generated, do not edit)', public: false, files });
+                await syncRememberGist(created.id);
             }
             syncCfg.lastSync = Date.now(); syncSave();
             syncFillUI();
@@ -2932,12 +2956,13 @@ function main() {
     $('sync-pull').addEventListener('click', async () => {
         syncRead();
         if (!syncCfg.token) { syncSetStatus(t('Введите токен GitHub')); return; }
-        if (!syncCfg.gistId) { syncSetStatus(t('Введите Gist ID')); return; }
         const btn = $('sync-pull');
         syncBusy(btn, true); syncSetStatus(t('Загружаю…'));
         try {
-            const gist = await ghApi('GET', '/gists/' + encodeURIComponent(syncCfg.gistId));
-            const hf = gist.files && gist.files['homepage-sync.json'];
+            const gist = await syncFindGist();
+            if (!gist) throw new Error(t('Gist с данными не найден. Сначала нажмите «Отправить в Gist» на другом устройстве.'));
+            syncSave();
+            const hf = gist.files && gist.files[SYNC_FILE];
             if (!hf) throw new Error(t('В Gist нет данных страницы'));
             const header = JSON.parse(hf.content);
             let text = '';
