@@ -2,7 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a120e">
 <title>My Home Page</title>
 <style>
     :root {
@@ -16,6 +17,7 @@
         --panel-field: rgba(255,255,255,0.08);
         --panel-field-hover: rgba(255,255,255,0.16);
         --tw: 270px;
+        --cell: 292px;
         --th: 150px;
         --ico: 64px;
         --tfs: 15px;
@@ -126,7 +128,7 @@
         text-decoration: none; color: var(--text); cursor: pointer;
     }
     .link-icon {
-        position: relative; width: var(--tw); height: var(--th); overflow: hidden;
+        position: relative; width: 100%; height: var(--th); overflow: hidden;
         border-radius: var(--tile-radius);
         background: var(--tbg, rgba(28, 16, 10, var(--tile-alpha)));
         color: var(--tfg, var(--text));
@@ -136,6 +138,20 @@
         transition: transform .15s ease, filter .15s ease;
     }
     .link-item:hover .link-icon { transform: translateY(-3px); filter: brightness(1.08); }
+    .link-item:focus { outline: none; }
+    .link-item:focus-visible .link-icon { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .link-item[data-span="2"] { grid-column: span 2; width: calc(var(--tw) + var(--cell)); }
+    .link-item[data-span="3"] { grid-column: span 3; width: calc(var(--tw) + var(--cell) * 2); }
+    .link-heading {
+        grid-column: 1 / -1; justify-self: stretch; text-align: left; position: relative; margin-top: 6px; padding: 4px 2px 6px;
+        font-size: 15px; font-weight: 600; letter-spacing: .02em; color: var(--text);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.28); cursor: grab; user-select: none;
+    }
+    .link-heading .del-btn { top: 2px; right: 0; }
+    .link-heading:hover .del-btn { opacity: 1; transform: scale(1); }
+    .link-heading.dragging { opacity: 0.35; }
+    .link-heading.drop-before { box-shadow: 0 -4px 0 var(--accent); }
+    .link-heading.drop-after { box-shadow: 0 4px 0 var(--accent); }
     .del-btn {
         position: absolute; top: -7px; right: -7px; z-index: 3;
         width: 22px; height: 22px; padding: 0; border: none; border-radius: 50%;
@@ -161,7 +177,7 @@
     }
     /* название под ярлыком */
     .link-name {
-        margin-top: 6px; width: var(--tw); height: 18px;
+        margin-top: 6px; width: 100%; height: 18px;
         font-size: 13px; line-height: 18px; text-align: center;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         color: var(--text); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
@@ -233,6 +249,27 @@
     .btn:hover { background: var(--panel-field-hover); }
     .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
     .btn svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .color-row select, .color-row .text-input {
+        width: auto; background: var(--panel-field); color: var(--panel-text);
+        border: 1px solid var(--panel-line); border-radius: 6px; padding: 5px 8px; font-size: 14px; outline: none;
+    }
+    .clock { display: none; text-align: center; margin: 0 0 20px; color: var(--text); text-shadow: 0 2px 8px rgba(0,0,0,0.45); }
+    body.show-clock .clock { display: block; }
+    .clock-time { font-size: 56px; font-weight: 300; line-height: 1.1; letter-spacing: 0.02em; }
+    .clock-date { margin-top: 2px; font-size: 16px; opacity: 0.9; }
+    .notes { margin-top: 30px; padding: 12px 14px 14px; color: var(--text); background: rgba(20,14,11,0.55); border-radius: 12px; backdrop-filter: blur(6px); }
+    .notes-title { margin-bottom: 6px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.75; }
+    .notes textarea { width: 100%; min-height: 90px; resize: vertical; border: none; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 15px; line-height: 1.45; }
+    .bg-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+    .bg-thumb { position: relative; width: 64px; height: 42px; border-radius: 6px; border: 1px solid var(--panel-line); background-size: cover; background-position: center; }
+    .bg-thumb button { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%; background: #b3382c; color: #fff; font-size: 13px; line-height: 17px; cursor: pointer; }
+    .icon-gen { margin: 6px 0 4px; font-size: 14px; color: var(--panel-text); }
+    .icon-gen summary { cursor: pointer; padding: 4px 0; }
+    .gen-body { display: flex; gap: 14px; align-items: flex-start; padding-top: 8px; }
+    #gen-preview { flex: none; border-radius: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .gen-fields { flex: 1; min-width: 0; }
+    .gen-fields .color-row { margin: 2px 0 8px; }
+    .gen-fields select { min-width: 0; flex: 1; }
     .color-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; font-size: 14px; color: var(--panel-text); }
     .color-row input[type="color"] { width: 40px; height: 30px; padding: 0; border: 1px solid var(--panel-line); border-radius: 6px; background: none; cursor: pointer; }
     #edit-color-note { color: var(--panel-muted); font-size: 13px; }
@@ -373,9 +410,67 @@
     .qs-row b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .qs-row small { margin-left: auto; padding-left: 12px; color: #a89c95; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
 
-    @media (max-width: 760px) {
-        :root { --cols: 3; }
-        .settings { width: calc(100% - 32px); }
+    /* ---------- Телефон и планшет ---------- */
+    .sheet-head, .scrim { display: none; }
+    #action-sheet { z-index: 2200; }
+    .action-card {
+        width: min(420px, calc(100% - 32px)); padding: 16px 14px 16px;
+        background: var(--panel-bg); color: var(--panel-text);
+        border: 1px solid var(--panel-line); border-radius: 18px;
+    }
+    .action-title { text-align: center; font-weight: 600; margin: 2px 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .action-card .btn { width: 100%; margin-bottom: 8px; padding: 13px; font-size: 16px; }
+    .drag-ghost { box-shadow: 0 10px 28px rgba(0,0,0,0.5); }
+    @media (hover: none) {
+        .del-btn { display: none; }
+        .link-item:hover .link-icon { transform: none; filter: none; }
+    }
+    @media (pointer: coarse) { #open-file-btn, #row-gridw { display: none; } }
+    @media (pointer: coarse), (max-width: 760px) {
+        html { -webkit-text-size-adjust: 100%; }
+        body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        .page { width: min(var(--grid-w), calc(100% - 28px)); padding: calc(env(safe-area-inset-top, 0px) + 14px) 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
+        .search-box { max-width: none; margin: 2px 0 20px; }
+        .search-input { font-size: 16px; }
+        .clock-time { font-size: 44px; }
+        .link-item, .link-icon, .link-name, .link-heading { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+        .link-item img { -webkit-user-drag: none; }
+        .gear-btn { right: calc(8px + env(safe-area-inset-right, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); width: 52px; height: 52px; }
+        .gear-btn:hover { transform: none; }
+        .scrim { display: block; position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,0.45); opacity: 0; pointer-events: none; transition: opacity .2s; }
+        .scrim.show { opacity: 1; pointer-events: auto; }
+        .settings {
+            display: block; visibility: hidden; transform: translateY(105%);
+            left: 0; right: 0; bottom: 0; width: auto; max-height: 84vh; z-index: 1100;
+            padding: 14px 16px calc(28px + env(safe-area-inset-bottom, 0px));
+            border-radius: 20px 20px 0 0; border-bottom: none;
+            transition: transform .25s ease, visibility 0s .25s;
+            overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+        }
+        .settings.open { visibility: visible; transform: none; transition: transform .25s ease; }
+        .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 17px; font-weight: 600; }
+        .sheet-head button { width: 36px; height: 36px; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; background: var(--panel-field); color: var(--panel-text); }
+        .row > label { flex: 0 0 104px; }
+        .row input[type="range"] { height: 30px; }
+        .btn { padding: 11px 14px; }
+        .check { padding: 5px 0; font-size: 15px; }
+        .swatch { width: 32px; height: 32px; }
+        .shape-btn { width: 44px; height: 44px; }
+        .text-input, .edit-input, .row input[type="number"], .row select { font-size: 16px; }
+        .modal { align-items: flex-end; }
+        .modal .edit-panel, #bm-modal .edit-panel {
+            width: 100% !important; border-radius: 20px 20px 0 0; border-bottom: none;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        }
+        .action-card { width: 100%; border-radius: 20px 20px 0 0; border-bottom: none; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+        #folder-modal { align-items: flex-end; }
+        .folder-card { width: 100%; max-height: 84vh; border-radius: 22px 22px 0 0; border-bottom: none; padding: 16px 14px calc(22px + env(safe-area-inset-bottom, 0px)); }
+        .folder-grid { grid-template-columns: repeat(auto-fill, minmax(calc(var(--tw) + 14px), 1fr)); }
+        #qs { padding-top: 6vh; }
+        .qs-card { width: calc(100% - 20px); }
+        .qs-row { padding: 12px; }
+        #qs-list { max-height: 52vh; overflow-y: auto; }
+        .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 24px); }
     }
 </style>
 </head>
@@ -384,6 +479,7 @@
 <div id="dim"></div>
 
 <div class="page">
+    <div class="clock" id="clock"><div class="clock-time"></div><div class="clock-date"></div></div>
     <div class="search-box">
         <div class="engine" id="engine">
             <button type="button" class="engine-btn" id="engine-btn" title="Поисковая система">
@@ -396,8 +492,10 @@
         <button class="search-button" id="search-button" title="Искать"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg></button>
     </div>
     <div class="links-container" id="links"></div>
+    <div class="notes hidden" id="notes"><div class="notes-title">Заметки</div><textarea id="notes-text" rows="5" placeholder="Заметки сохраняются автоматически"></textarea></div>
 </div>
 
+<div class="scrim" id="scrim"></div>
 <!-- Шестерёнка -->
 <button class="gear-btn" id="gear-btn" title="Настройки">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.31-.07.63-.07.94s.02.63.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
@@ -405,6 +503,7 @@
 
 <!-- Настройки -->
 <div class="settings" id="settings">
+    <div class="sheet-head"><span>Настройки</span><button type="button" id="sheet-close" aria-label="Закрыть">×</button></div>
     <div class="row">
         <label>Язык / Language</label>
         <select id="lang-select" style="flex:1">
@@ -428,6 +527,15 @@
             <button class="btn" id="bg-clear">Убрать</button>
         </div>
         <input class="text-input" id="bg-url" placeholder="или вставьте ссылку на картинку и нажмите Enter" style="margin-bottom:10px">
+        <div class="row">
+            <label>Смена фона</label>
+            <select id="bg-rotate" style="flex:1">
+                <option value="off">Выключена</option><option value="open">При каждом открытии</option>
+                <option value="hour">Каждый час</option><option value="day">Каждый день</option>
+            </select>
+        </div>
+        <div class="btn-row"><button class="btn" id="bg-add">Добавить в слайдшоу</button></div>
+        <div class="bg-thumbs" id="bg-thumbs"></div>
         <div class="row">
             <label>Затемнение</label>
             <input type="range" id="dim-range" min="0" max="80" step="1">
@@ -479,7 +587,7 @@
         <input type="range" id="rowgap-range" min="0" max="80" step="1">
         <span class="val" id="rowgap-val"></span>
     </div>
-    <div class="row">
+    <div class="row" id="row-gridw">
         <label>Ширина сетки</label>
         <input type="range" id="gridw-range" min="400" max="1800" step="10">
         <span class="val" id="gridw-val"></span>
@@ -533,9 +641,15 @@
     <label class="check"><input type="checkbox" id="show-search"> Показывать строку поиска</label>
     <label class="check"><input type="checkbox" id="quick-search"> Быстрый поиск: печатайте прямо на странице</label>
 
+    <h4>Страница</h4>
+    <label class="check"><input type="checkbox" id="show-clock"> Часы и дата</label>
+    <label class="check"><input type="checkbox" id="show-notes"> Заметки</label>
+    <label class="check"><input type="checkbox" id="auto-dim"> Затемнять фон ночью</label>
+
     <h4>Закладки</h4>
     <div class="btn-row">
         <button class="btn" id="bm-import-btn"><svg viewBox="0 0 24 24"><path d="M7 4.5h10A1.5 1.5 0 0 1 18.5 6v14l-6.5-4.5L5.5 20V6A1.5 1.5 0 0 1 7 4.5z"/></svg>Импорт закладок</button>
+        <button class="btn" id="new-heading-btn"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h8"/></svg>Новый заголовок</button>
         <button class="btn" id="new-folder-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M12 11.5v5M9.5 14h5"/></svg>Новая папка</button>
     </div>
     <div class="hint">Chrome и Edge: Диспетчер закладок → ⋮ → «Экспорт закладок». Firefox: Закладки → Управление закладками → Импорт и резервные копии → «Экспорт закладок в HTML». Затем выберите сохранённый .html файл.</div>
@@ -552,11 +666,34 @@
         </div>
     </div>
 
+    <h4>Синхронизация (GitHub Gist)</h4>
+    <div class="row"><label>Токен GitHub</label><input type="password" class="text-input" id="sync-token" placeholder="ghp_… (право gist)" autocomplete="off" style="flex:1"></div>
+    <div class="row"><label>Gist ID</label><input type="text" class="text-input" id="sync-gist" placeholder="появится после первой отправки" autocomplete="off" style="flex:1"></div>
+    <div class="row"><label>Пароль шифрования</label><input type="password" class="text-input" id="sync-pass" placeholder="рекомендуется" autocomplete="new-password" style="flex:1"></div>
+    <div class="row"><label>Что синхронизировать</label>
+        <select id="sync-scope" style="flex:1">
+            <option value="links">Ярлыки и заметки</option>
+            <option value="look">+ оформление</option>
+            <option value="all">+ фон и слайдшоу</option>
+        </select>
+    </div>
+    <label class="check"><input type="checkbox" id="sync-remember"> Запомнить токен и пароль на этом устройстве</label>
+    <div class="btn-row">
+        <button class="btn" id="sync-push">Отправить в Gist</button>
+        <button class="btn" id="sync-pull">Загрузить из Gist</button>
+    </div>
+    <div class="hint" id="sync-status"></div>
+    <div class="hint">Данные попадают в ваш секретный Gist на GitHub. Без пароля содержимое может прочитать любой, у кого есть ссылка, поэтому пароль лучше задать. Токен создаётся в GitHub: Settings → Developer settings → Personal access tokens, с правом gist. Пароль восстановить нельзя.</div>
+
     <h4>Данные</h4>
     <div class="btn-row">
         <button class="btn" id="export-btn" title="Сохранить ссылки, настройки, фон и иконки в .zip"><svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Экспорт</button>
         <button class="btn" id="import-btn" title="Загрузить .zip (или старый .json)"><svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Импорт</button>
         <button class="btn" id="open-file-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>Открыть файл</button>
+    </div>
+    <div class="btn-row">
+        <button class="btn" id="undo-btn" title="Ctrl+Z">Отменить</button>
+        <button class="btn" id="redo-btn" title="Ctrl+Shift+Z">Повторить</button>
     </div>
     <div class="btn-row">
         <button class="btn" id="reset-btn">Сбросить оформление</button>
@@ -575,12 +712,34 @@
             <div style="margin-bottom:10px">
                 <button class="btn" id="edit-icon-upload" style="width:100%">Загрузить иконку с компьютера</button>
             </div>
+            <details class="icon-gen" id="icon-gen">
+                <summary>Создать иконку</summary>
+                <div class="gen-body">
+                    <img id="gen-preview" alt="" width="84" height="84">
+                    <div class="gen-fields">
+                        <div class="color-row"><span>Текст</span><input id="gen-text" class="text" maxlength="4" style="width:84px;margin:0"></div>
+                        <div class="color-row"><span>Цвет</span><input type="color" id="gen-color"></div>
+                        <div class="color-row"><span>Значок</span>
+                            <select id="gen-glyph">
+                                <option value="none">Без значка</option><option value="git">Ветка (Git)</option><option value="review">Ревью</option>
+                                <option value="phone">Телефон</option><option value="tablet">Планшет</option><option value="film">Плёнка</option>
+                                <option value="cube">Куб</option><option value="windows">Окна</option><option value="image">Картинка</option><option value="spark">Искра</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn" id="gen-apply">Использовать</button>
+                    </div>
+                </div>
+            </details>
             <div class="color-row">
                 <span>Цвет ярлыка</span>
                 <input type="color" id="edit-color">
                 <button type="button" class="btn" id="edit-color-auto">Авто</button>
                 <span id="edit-color-note"></span>
             </div>
+        </div>
+        <div class="color-row" id="edit-span-row">
+            <span>Занимает колонок</span>
+            <select id="edit-span"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
         </div>
         <div class="edit-buttons">
             <button class="btn danger" id="edit-delete">Удалить</button>
@@ -626,23 +785,73 @@
     </div>
 </div>
 
+<!-- Меню ярлыка (долгое нажатие на сенсорном экране) -->
+<div class="modal" id="action-sheet">
+    <div class="action-card">
+        <div class="action-title" id="action-title"></div>
+        <button class="btn" id="act-newtab">Открыть в новой вкладке</button>
+        <button class="btn" id="act-edit">Изменить</button>
+        <button class="btn danger" id="act-del">Удалить</button>
+        <button class="btn" id="act-cancel">Отмена</button>
+    </div>
+</div>
+
 <div class="toast" id="toast"><span id="toast-text"></span><button type="button" id="toast-undo">Отменить</button></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+/* ===================== Хранилище (расширение: browser.storage.local, страница: localStorage) ===================== */
+const Store = (function () {
+    const KEYS = ['quickLinks', 'homeSettings', 'customGradient', 'savedFavicons', 'homeNotes', 'syncCfg'];
+    const cache = {};
+    let ext = (typeof browser !== 'undefined' && browser.storage && browser.storage.local) ? browser : null;
+    const api = { onError: null };
+    const lsGet = k => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : undefined; } catch (e) { return undefined; } };
+    api.load = async function () {
+        if (ext) {
+            try {
+                const got = await ext.storage.local.get(KEYS);
+                let migrated = false;
+                for (const k of KEYS) {
+                    if (got[k] !== undefined) cache[k] = got[k];
+                    else { const v = lsGet(k); if (v !== undefined) { cache[k] = v; migrated = true; } }   // разовый перенос из старого хранилища
+                }
+                if (migrated) await ext.storage.local.set(cache);
+                return;
+            } catch (e) { ext = null; }
+        }
+        for (const k of KEYS) { const v = lsGet(k); if (v !== undefined) cache[k] = v; }
+    };
+    api.get = (k, fb) => (cache[k] === undefined ? fb : cache[k]);
+    api.set = function (k, v) {
+        cache[k] = v;
+        if (ext) { ext.storage.local.set({ [k]: v }).catch(() => { if (api.onError) api.onError(); }); return true; }
+        try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+    };
+    api.setAsync = async function (k, v) {
+        cache[k] = v;
+        if (ext) { try { await ext.storage.local.set({ [k]: v }); return true; } catch (e) { return false; } }
+        try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; }
+    };
+    api.isExtension = () => !!ext;
+    return api;
+})();
+(function boot() {
+    const ready = document.readyState === 'loading'
+        ? new Promise(r => document.addEventListener('DOMContentLoaded', r))
+        : Promise.resolve();
+    Promise.all([ready, Store.load()]).then(main);
+})();
+
+function main() {
 
     /* ===================== Хранилище ===================== */
     function getStorage(key, fallback) {
-        try {
-            const raw = localStorage.getItem(key);
-            return raw ? JSON.parse(raw) : (fallback === undefined ? [] : fallback);
-        } catch (e) { return fallback === undefined ? [] : fallback; }
+        const v = Store.get(key);
+        return (v === undefined || v === null) ? (fallback === undefined ? [] : fallback) : v;
     }
-    function setStorage(key, value) {
-        try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-        catch (e) { return false; }
-    }
+    function setStorage(key, value) { return Store.set(key, value); }
 
+    const COARSE = window.matchMedia('(pointer: coarse)').matches;   // сенсорный экран как основной ввод
     const DEFAULTS = {
         lang: 'auto',
         bgMode: 'image',
@@ -656,6 +865,11 @@ document.addEventListener('DOMContentLoaded', function () {
         tileW: 270,
         tileH: 150,
         tileStyle: 'card',
+        bgImages: [],
+        bgRotate: 'off',
+        autoDim: false,
+        showClock: false,
+        showNotes: false,
         iconPlate: false,
         nameMode: 'auto',
         bgBlur: 0,
@@ -669,6 +883,7 @@ document.addEventListener('DOMContentLoaded', function () {
         panelAngle: 135,
         showSearch: false
     };
+    if (COARSE) Object.assign(DEFAULTS, { cols: 4, tileW: 72, tileH: 72, rowGap: 12, tileStyle: 'dark', nameMode: 'below', tileRadius: 22, showSearch: true });
     const DEFAULT_GRADIENT = { color1: '#3a1c0f', color2: '#c2461a', angle: 45, type: 'linear' };
 
     let settings = Object.assign({}, DEFAULTS, getStorage('homeSettings', {}));
@@ -703,6 +918,74 @@ document.addEventListener('DOMContentLoaded', function () {
  "Квадрат": "Square",
  "Широкий": "Wide",
  "Стиль ярлыка": "Tile style",
+ "Изменить": "Edit",
+ "Открыть в новой вкладке": "Open in new tab",
+ "ghp_… (право gist)": "ghp_… (gist scope)",
+ "Синхронизация (GitHub Gist)": "Sync (GitHub Gist)",
+ "Токен GitHub": "GitHub token",
+ "Пароль шифрования": "Encryption password",
+ "Что синхронизировать": "What to sync",
+ "Ярлыки и заметки": "Tiles and notes",
+ "+ оформление": "+ appearance",
+ "+ фон и слайдшоу": "+ background and slideshow",
+ "Запомнить токен и пароль на этом устройстве": "Remember token and password on this device",
+ "Отправить в Gist": "Push to Gist",
+ "Загрузить из Gist": "Pull from Gist",
+ "появится после первой отправки": "appears after the first push",
+ "рекомендуется": "recommended",
+ "Данные попадают в ваш секретный Gist на GitHub. Без пароля содержимое может прочитать любой, у кого есть ссылка, поэтому пароль лучше задать. Токен создаётся в GitHub: Settings → Developer settings → Personal access tokens, с правом gist. Пароль восстановить нельзя.": "Data goes to your secret Gist on GitHub. Without a password anyone who has the link can read it, so setting a password is recommended. Create the token in GitHub: Settings → Developer settings → Personal access tokens, with the gist scope. A lost password cannot be recovered.",
+ "Последняя синхронизация: {t}": "Last sync: {t}",
+ "Нужен пароль шифрования": "The encryption password is required",
+ "Неверный пароль или данные повреждены": "Wrong password or the data is corrupted",
+ "Введите токен GitHub": "Enter your GitHub token",
+ "Введите Gist ID": "Enter the Gist ID",
+ "Отправляю…": "Sending…",
+ "Загружаю…": "Loading…",
+ "Отправлено в Gist": "Pushed to Gist",
+ "В Gist нет данных страницы": "The Gist has no page data",
+ "Данные в Gist неполные": "The Gist data is incomplete",
+ "Неизвестный формат данных": "Unknown data format",
+ "Заменить ярлыки и заметки данными из Gist от {t}?": "Replace tiles and notes with the Gist data from {t}?",
+ "Ошибка синхронизации: {m}": "Sync error: {m}",
+ "Смена фона": "Background rotation",
+ "Выключена": "Off",
+ "При каждом открытии": "On every open",
+ "Каждый час": "Every hour",
+ "Каждый день": "Every day",
+ "Добавить в слайдшоу": "Add to slideshow",
+ "Страница": "Page",
+ "Часы и дата": "Clock and date",
+ "Заметки": "Notes",
+ "Затемнять фон ночью": "Dim the background at night",
+ "Заметки сохраняются автоматически": "Notes are saved automatically",
+ "Не больше 8 картинок в слайдшоу": "No more than 8 slideshow images",
+ "Создать иконку": "Create icon",
+ "Текст": "Text",
+ "Цвет": "Color",
+ "Значок": "Glyph",
+ "Без значка": "No glyph",
+ "Ветка (Git)": "Branch (Git)",
+ "Ревью": "Review",
+ "Телефон": "Phone",
+ "Планшет": "Tablet",
+ "Плёнка": "Film",
+ "Куб": "Cube",
+ "Окна": "Windows",
+ "Искра": "Sparkle",
+ "Использовать": "Use",
+ "Иконка выбрана — нажмите «Сохранить»": "Icon chosen — press “Save”",
+ "Не удалось создать иконку": "Could not create the icon",
+ "Копировать": "Copy",
+ "Искать «{q}» на {site}": "Search “{q}” on {site}",
+ "Скопировано: {v}": "Copied: {v}",
+ "Новый заголовок": "New heading",
+ "Название заголовка": "Heading text",
+ "Занимает колонок": "Columns spanned",
+ "Нечего отменять": "Nothing to undo",
+ "Действие отменено": "Action undone",
+ "Нечего повторять": "Nothing to redo",
+ "Действие повторено": "Action redone",
+ "Повторить": "Redo",
  "Белая подложка под иконкой": "White plate behind the icon",
  "Карточка (цвет по иконке)": "Card (color from icon)",
  "Тёмная плитка": "Dark tile",
@@ -930,18 +1213,50 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     let NAME_INSIDE = true;
+
+    // Фон-слайдшоу, ночное затемнение, часы и заметки
+    const sessionSeed = Math.random();
+    function currentBgImage() {
+        const pool = [settings.bgImage].concat(settings.bgImages || []).filter(Boolean);
+        if (!pool.length) return '';
+        if (pool.length === 1 || settings.bgRotate === 'off') return pool[0];
+        const now = new Date();
+        let idx;
+        if (settings.bgRotate === 'open') idx = Math.floor(sessionSeed * pool.length);
+        else if (settings.bgRotate === 'hour') idx = Math.floor(now.getTime() / 3600000) % pool.length;
+        else idx = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000) % pool.length;
+        return pool[idx];
+    }
+    function effectiveDim() {
+        const h = new Date().getHours();
+        return Math.min(90, settings.dim + (settings.autoDim && (h >= 21 || h < 6) ? 25 : 0));
+    }
+    const clockEl = document.getElementById('clock');
+    const notesBox = document.getElementById('notes');
+    const notesText = document.getElementById('notes-text');
+    notesText.value = getStorage('homeNotes', '');
+    let notesTimer;
+    notesText.addEventListener('input', () => { clearTimeout(notesTimer); notesTimer = setTimeout(() => setStorage('homeNotes', notesText.value), 400); });
+    function updateClock() {
+        document.body.classList.toggle('show-clock', !!settings.showClock);
+        if (!settings.showClock) return;
+        const loc = LANG === 'ru' ? 'ru-RU' : 'en-US', now = new Date();
+        clockEl.querySelector('.clock-time').textContent = now.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
+        clockEl.querySelector('.clock-date').textContent = now.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' });
+    }
     function applyAppearance() {
         root.style.setProperty('--text', settings.textColor);
         root.style.setProperty('--tile-alpha', settings.tileOpacity / 100);
-        root.style.setProperty('--dim', settings.dim / 100);
+        root.style.setProperty('--dim', effectiveDim() / 100);
         root.style.setProperty('--cols', settings.cols);
         root.style.setProperty('--row-gap', settings.rowGap + 'px');
         root.style.setProperty('--grid-w', settings.gridWidth + 'px');
         // размеры ярлыка: не шире ячейки сетки, пропорции сохраняются
-        const cellW = Math.min(settings.gridWidth, window.innerWidth - 40) / settings.cols;
+        const cellW = Math.min(settings.gridWidth, window.innerWidth - ((COARSE || window.innerWidth <= 760) ? 28 : 40)) / settings.cols;
         const k = Math.min(1, (cellW - Math.max(10, settings.rowGap)) / settings.tileW);
         const tw = Math.max(40, Math.round(settings.tileW * k)), th = Math.max(36, Math.round(settings.tileH * k));
         NAME_INSIDE = settings.nameMode === 'inside' || (settings.nameMode === 'auto' && (settings.tileStyle === 'card' || tw > th * 1.15));
+        root.style.setProperty('--cell', Math.round(cellW) + 'px');
         root.style.setProperty('--tw', tw + 'px');
         root.style.setProperty('--th', th + 'px');
         root.style.setProperty('--ico', Math.max(22, Math.round(NAME_INSIDE ? th * 0.44 : Math.min(tw, th) * 0.58)) + 'px');
@@ -953,9 +1268,12 @@ document.addEventListener('DOMContentLoaded', function () {
         root.style.setProperty('--bg-bright', settings.bgBright / 100);
         applyPanelTheme();
 
-        if (settings.bgMode === 'image' && settings.bgImage) {
+        updateClock();
+        notesBox.classList.toggle('hidden', !settings.showNotes);
+        const bgNow = currentBgImage();
+        if (settings.bgMode === 'image' && bgNow) {
             bgEl.style.background = '';
-            bgEl.style.backgroundImage = `url("${settings.bgImage}")`;
+            bgEl.style.backgroundImage = `url("${bgNow}")`;
             bgEl.style.backgroundSize = 'cover';
             bgEl.style.backgroundPosition = 'center';
         } else {
@@ -1010,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     engineBtn.addEventListener('click', e => { e.stopPropagation(); engineMenu.classList.toggle('open'); });
-    document.addEventListener('mousedown', e => {
+    document.addEventListener('pointerdown', e => {
         if (!engineMenu.contains(e.target) && !engineBtn.contains(e.target)) engineMenu.classList.remove('open');
     });
     refreshEngineUI();
@@ -1074,11 +1392,43 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     const isFolder = it => !!it && it.type === 'folder';
 
-    function persist() {
+    // История изменений ярлыков: снимки без копирования иконок (строки общие)
+    const cloneTree = list => list.map(it => (it && it.type === 'folder') ? Object.assign({}, it, { items: cloneTree(it.items || []) }) : Object.assign({}, it));
+    let undoStack = [], redoStack = [], lastSnap = cloneTree(savedLinks);
+    function persist(noUndo) {
+        if (!noUndo) {
+            undoStack.push(lastSnap);
+            if (undoStack.length > 20) undoStack.shift();
+            redoStack = [];
+        }
+        lastSnap = cloneTree(savedLinks);
         if (!setStorage('quickLinks', savedLinks)) {
             showToast(t('Не удалось сохранить: хранилище браузера переполнено'));
         }
     }
+    function restoreSnapshot(snap) {
+        savedLinks.length = 0;
+        snap.forEach(x => savedLinks.push(x));
+        lastSnap = cloneTree(savedLinks);
+        setStorage('quickLinks', savedLinks);
+        folderStack = []; folderModal.classList.remove('open');
+        renderAll();
+    }
+    function undoLast() {
+        const snap = undoStack.pop();
+        if (!snap) { showToast(t('Нечего отменять')); return; }
+        redoStack.push(lastSnap);
+        restoreSnapshot(snap);
+        showToast(t('Действие отменено'));
+    }
+    function redoLast() {
+        const snap = redoStack.pop();
+        if (!snap) { showToast(t('Нечего повторять')); return; }
+        undoStack.push(lastSnap);
+        restoreSnapshot(snap);
+        showToast(t('Действие повторено'));
+    }
+    Store.onError = () => showToast(t('Не удалось сохранить: хранилище браузера переполнено'));
 
     /* ---------- Уведомление с отменой ---------- */
     let toastTimer, undoAction = null;
@@ -1125,6 +1475,7 @@ document.addEventListener('DOMContentLoaded', function () {
         (function walk(list, depth) {
             for (const it of list) {
                 if (isFolder(it)) walk(it.items || [], depth + 1);
+                else if (it.type === 'heading') continue;
                 else if (!it.icon || it.icon === FALLBACK_ICON) todo.push({ it, sz: depth === 0 ? 256 : 128 });
                 else if (it.autoBg === undefined && it.icon.startsWith('data:')) todo.push({ it, sz: 0, colorOnly: true });
             }
@@ -1149,7 +1500,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         await Promise.all(Array.from({ length: 6 }, worker));
-        if (changed) persist();
+        if (changed) persist(true);
         return changed;
     }
 
@@ -1157,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function scheduleFill() {
         if (filling) return;
         let missing = false;
-        (function w(list) { for (const it of list) { if (isFolder(it)) w(it.items || []); else if (!it.icon || it.icon === FALLBACK_ICON || (it.autoBg === undefined && it.icon.startsWith('data:'))) missing = true; } })(savedLinks);
+        (function w(list) { for (const it of list) { if (isFolder(it)) w(it.items || []); else if (it.type === 'heading') continue; else if (!it.icon || it.icon === FALLBACK_ICON || (it.autoBg === undefined && it.icon.startsWith('data:'))) missing = true; } })(savedLinks);
         if (!missing) return;
         filling = true;
         let shown = false;
@@ -1187,18 +1538,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function openEditor(list, index, kind) {
         editList = list; editIndex = index;
         const item = index === null
-            ? (kind === 'folder' ? { type: 'folder', name: '', items: [] } : { name: '', url: '', icon: '' })
+            ? (kind === 'folder' ? { type: 'folder', name: '', items: [] } : kind === 'heading' ? { type: 'heading', name: '' } : { name: '', url: '', icon: '' })
             : list[index];
-        editKind = isFolder(item) ? 'folder' : 'link';
-        linkFields.classList.toggle('hidden', editKind === 'folder');
-        previewWrap.classList.toggle('hidden', editKind === 'folder');
-        nameInput.placeholder = editKind === 'folder' ? t('Название папки') : t('Название');
+        editKind = isFolder(item) ? 'folder' : (item.type === 'heading' ? 'heading' : 'link');
+        linkFields.classList.toggle('hidden', editKind !== 'link');
+        previewWrap.classList.toggle('hidden', editKind !== 'link');
+        document.getElementById('edit-span-row').classList.toggle('hidden', editKind === 'heading' || list !== savedLinks);
+        document.getElementById('edit-span').value = String(item.span || 1);
+        nameInput.placeholder = editKind === 'folder' ? t('Название папки') : editKind === 'heading' ? t('Название заголовка') : t('Название');
         nameInput.value = item.name;
         if (editKind === 'link') {
             urlInput.value = (item.url || '').replace(/^https?:\/\//, '');
             iconInput.value = item.icon && !item.icon.startsWith('data:') ? item.icon : '';
             faviconPreview.src = item.icon || FALLBACK_ICON;
             delete faviconPreview.dataset.custom;
+            prefillGen(item);
             editColor = item.bg || null;
             document.getElementById('edit-color').value = item.bg || item.autoBg || '#3d4a5c';
             updateColorNote();
@@ -1232,15 +1586,112 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+
+    /* ---------- Генератор иконок ---------- */
+    const GEN_GIT = '<g stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".9"><circle cx="106" cy="184" r="10"/><circle cx="106" cy="224" r="10"/><circle cx="152" cy="198" r="10"/><path d="M106 194V214"/><path d="M152 208C152 220 106 206 106 214"/></g>';
+    const GEN_REVIEW = '<g stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".92"><path d="M80 172h96a10 10 0 0 1 10 10v30a10 10 0 0 1-10 10h-48l-20 17v-17H80a10 10 0 0 1-10-10v-30a10 10 0 0 1 10-10z"/><path d="M104 198l15 15 33-33"/></g>';
+    const GEN_SPARK = 'M128 36C135 94 162 121 220 128C162 135 135 162 128 220C121 162 94 135 36 128C94 121 121 94 128 36Z';
+    const xmlEsc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    function mixColor(hex, withHex, k) {
+        const a = hexToRgb(hex), b = hexToRgb(withHex);
+        return rgbToHex(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k);
+    }
+    function hslToHex(h, sat, l) {
+        sat /= 100; l /= 100;
+        const k = n => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+        const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        return rgbToHex(f(0) * 255, f(8) * 255, f(4) * 255);
+    }
+    function genSvg(text, color, glyph) {
+        const c1 = mixColor(color, '#ffffff', 0.28), c2 = shadeColor(color, 0.72);
+        const F = 'Arial, Helvetica, sans-serif';
+        const txt = (str, size, y) => '<text x="128" y="' + y + '" font-family="' + F + '" font-size="' + size + '" font-weight="800" text-anchor="middle" fill="#fff" letter-spacing="-2">' + xmlEsc(str) + '</text>';
+        const stroke = (inner, w) => '<g stroke="#fff" stroke-width="' + (w || 8) + '" stroke-linecap="round" stroke-linejoin="round" fill="none">' + inner + '</g>';
+        const tx = String(text || '').trim().slice(0, 4), n = tx.length;
+        const sizeG = [0, 110, 96, 80, 64][n] || 64, sizeN = [0, 150, 118, 92, 72][n] || 72;
+        const spark = (sc, cx, cy, op) => '<path d="' + GEN_SPARK + '" fill="#fff" opacity="' + op + '" transform="translate(' + (cx - 128 * sc) + ',' + (cy - 128 * sc) + ') scale(' + sc + ')"/>';
+        let body;
+        switch (glyph) {
+            case 'git': body = (tx ? txt(tx, sizeG, 124) : '') + GEN_GIT; break;
+            case 'review': body = (tx ? txt(tx, Math.min(sizeG, 86), 118) : '') + GEN_REVIEW; break;
+            case 'phone': body = stroke('<rect x="88" y="42" width="80" height="172" rx="18"/><path d="M118 60h20"/>') + (tx ? txt(tx.slice(0, 2), 86, 162) : ''); break;
+            case 'tablet': body = stroke('<rect x="40" y="66" width="176" height="124" rx="16"/>') + (tx ? txt(tx.slice(0, 2), 78, 152) : ''); break;
+            case 'film': {
+                let holes = '';
+                for (const x of [66, 178]) for (const y of [82, 108, 134, 160]) holes += '<rect x="' + x + '" y="' + y + '" width="12" height="12" rx="2" fill="#fff"/>';
+                body = stroke('<rect x="56" y="62" width="144" height="132" rx="14"/><path d="M94 62v132M162 62v132"/>') + holes + '<path d="M116 104L148 128L116 152Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>';
+                break;
+            }
+            case 'cube': body = stroke('<path d="M128 46L192 84V164L128 202L64 164V84Z"/><path d="M64 84L128 122L192 84"/><path d="M128 122V202"/>', 9); break;
+            case 'windows': {
+                let sq = '';
+                for (const x of [76, 132]) for (const y of [40, 96]) sq += '<rect x="' + x + '" y="' + y + '" width="48" height="48" rx="7" fill="#fff"/>';
+                body = sq + (tx ? txt(tx, 60, 214) : '');
+                break;
+            }
+            case 'image': body = stroke('<rect x="44" y="62" width="168" height="132" rx="18"/>') + '<circle cx="170" cy="104" r="16" fill="#fff"/><path d="M56 184L104 116L140 160L164 134L200 184Z" fill="#fff" opacity=".92"/>'; break;
+            case 'spark': body = spark(0.78, 124, 134, 1) + spark(0.26, 196, 66, 0.9); break;
+            default: body = txt(tx || '?', sizeN, Math.round(128 + sizeN * 0.35));
+        }
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient><linearGradient id="h" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><rect width="256" height="256" rx="58" fill="url(#g)"/><path d="M0 58a58 58 0 0 1 58-58h140a58 58 0 0 1 58 58v70C190 112 70 112 0 128Z" fill="url(#h)"/>' + body + '</svg>';
+    }
+    const svgDataUrl = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    function svgToPng(svg, size) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const c = document.createElement('canvas'); c.width = c.height = size;
+                c.getContext('2d').drawImage(img, 0, 0, size, size);
+                resolve(c.toDataURL('image/png'));
+            };
+            img.onerror = () => reject(new Error('icon'));
+            img.src = svgDataUrl(svg);
+        });
+    }
+    const genEls = { text: document.getElementById('gen-text'), color: document.getElementById('gen-color'), glyph: document.getElementById('gen-glyph'), preview: document.getElementById('gen-preview') };
+    const genSvgNow = () => genSvg(genEls.text.value, genEls.color.value, genEls.glyph.value);
+    function updateGenPreview() { genEls.preview.src = svgDataUrl(genSvgNow()); }
+    let genTouched = false;
+    function genFromName(name, url) {
+        const words = String(name || '').trim().split(/[\s\-_.]+/).filter(Boolean);
+        genEls.text.value = words.length > 1 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0] || '').slice(0, 2).replace(/^./, c => c.toUpperCase());
+        genEls.color.value = hslToHex(hashHue(name || url || ''), 62, 46);
+        updateGenPreview();
+    }
+    function prefillGen(item) {
+        genTouched = false;
+        genEls.glyph.value = 'none';
+        genFromName(item.name, item.url);
+    }
+    genEls.text.addEventListener('input', () => { genTouched = true; });
+    genEls.color.addEventListener('input', () => { genTouched = true; });
+    nameInput.addEventListener('input', () => { if (!genTouched) genFromName(nameInput.value, urlInput.value); });
+    ['input', 'change'].forEach(ev => [genEls.text, genEls.color, genEls.glyph].forEach(el => el.addEventListener(ev, updateGenPreview)));
+    document.getElementById('gen-apply').addEventListener('click', async () => {
+        try {
+            const data = await svgToPng(genSvgNow(), 256);
+            iconInput.value = '';
+            faviconPreview.src = data;
+            faviconPreview.dataset.custom = data;
+            document.getElementById('icon-gen').open = false;
+            showToast(t('Иконка выбрана — нажмите «Сохранить»'));
+        } catch (e) { showToast(t('Не удалось создать иконку')); }
+    });
+
     document.getElementById('edit-cancel').addEventListener('click', closeEditor);
-    modal.addEventListener('mousedown', e => { if (e.target === modal) closeEditor(); });
+    modal.addEventListener('pointerdown', e => { if (e.target === modal) closeEditor(); });
 
     document.getElementById('edit-save').addEventListener('click', async () => {
         const name = nameInput.value.trim();
         if (!name) return;
-        if (editKind === 'folder') {
+        const spanVal = parseInt(document.getElementById('edit-span').value) || 1;
+        if (editKind === 'heading') {
             if (editIndex !== null) editList[editIndex].name = name;
-            else editList.push({ type: 'folder', name, items: [] });
+            else editList.push({ type: 'heading', name });
+        } else if (editKind === 'folder') {
+            let f;
+            if (editIndex !== null) { f = editList[editIndex]; f.name = name; } else { f = { type: 'folder', name, items: [] }; editList.push(f); }
+            if (spanVal > 1) f.span = spanVal; else delete f.span;
         } else {
             let url = urlInput.value.trim();
             if (!url) return;
@@ -1255,6 +1706,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (auto) item.auto = true;
             if (old && old.icon === icon && old.autoBg !== undefined) item.autoBg = old.autoBg;
             if (editColor) item.bg = editColor;
+            if (spanVal > 1) item.span = spanVal;
             if (editIndex !== null) editList[editIndex] = item; else editList.push(item);
         }
         persist();
@@ -1290,7 +1742,7 @@ document.addEventListener('DOMContentLoaded', function () {
         clearMarks();
         dragItem = null;
         document.body.classList.remove('is-dragging');
-        document.querySelectorAll('.link-item.dragging').forEach(x => x.classList.remove('dragging'));
+        document.querySelectorAll('.link-item.dragging, .link-heading.dragging').forEach(x => x.classList.remove('dragging'));
         document.getElementById('folder-out').classList.remove('over');
     }
     function dropMode(e, el, target) {
@@ -1315,8 +1767,141 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         persist(); renderAll();
     }
+    /* ---------- Сенсорное управление: долгое нажатие → меню, потянуть → перенос ---------- */
+    const LONG_MS = 380, MOVE_TOL = 10;
+    let press = null, suppressClickUntil = 0;
+    // клик сразу после долгого нажатия гасим
+    document.addEventListener('click', e => { if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); } }, true);
+    // после долгого нажатия не даём странице прокручиваться
+    document.addEventListener('touchmove', e => { if (press && press.active) e.preventDefault(); }, { passive: false });
+    function dropModeAt(x, el, target) {
+        const r = el.getBoundingClientRect();
+        const k = (x - r.left) / r.width;
+        if (isFolder(target) && k > 0.25 && k < 0.75 && !containsFolder(dragItem.item, target)) return 'into';
+        return k < 0.5 ? 'before' : 'after';
+    }
+    function attachPress(el, list, item) {
+        el.addEventListener('pointerdown', e => {
+            if (press) return;
+            if (e.pointerType === 'mouse' && (!COARSE || e.button !== 0)) return;
+            if (e.target.closest('.del-btn')) return;
+            const r = el.getBoundingClientRect();
+            press = { el, info: { list, item }, id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY,
+                      offX: e.clientX - r.left, offY: e.clientY - r.top, active: false, moved: false, ghost: null, drop: null, raf: 0 };
+            press.timer = setTimeout(startDrag, LONG_MS);
+        });
+    }
+    function startDrag() {
+        if (!press) return;
+        press.active = true;
+        dragItem = press.info;
+        if (navigator.vibrate) navigator.vibrate(12);
+        const el = press.el, r = el.getBoundingClientRect();
+        const g = el.cloneNode(true);
+        g.querySelectorAll('.del-btn').forEach(x => x.remove());
+        g.classList.add('drag-ghost');
+        g.style.cssText = 'position:fixed;left:0;top:0;width:' + r.width + 'px;margin:0;pointer-events:none;z-index:5000;opacity:.93;transform:translate(' + r.left + 'px,' + r.top + 'px) scale(1.08);';
+        document.body.appendChild(g);
+        press.ghost = g;
+        el.classList.add('dragging');
+        document.body.classList.add('is-dragging');
+        if (window.getSelection) window.getSelection().removeAllRanges();
+        tickScroll();
+    }
+    function moveGhost() { press.ghost.style.transform = 'translate(' + (press.x - press.offX) + 'px,' + (press.y - press.offY) + 'px) scale(1.08)'; }
+    function updateTarget() {
+        const out = document.getElementById('folder-out');
+        out.classList.remove('over');
+        press.drop = null;
+        const tg = document.elementFromPoint(press.x, press.y);
+        if (!tg) { clearMarks(); return; }
+        if (tg.closest('#folder-out')) { out.classList.add('over'); clearMarks(); press.drop = { kind: 'out' }; return; }
+        const tile = tg.closest('.link-item, .link-heading');
+        if (!tile || !tile._dnd || tile === press.el) { clearMarks(); return; }
+        const d = tile._dnd;
+        if (d.end) { markDrop(tile, 'before'); press.drop = { kind: 'end', list: d.list }; return; }
+        if (d.item === dragItem.item) { clearMarks(); return; }
+        const mode = dropModeAt(press.x, tile, d.item);
+        markDrop(tile, mode);
+        press.drop = { kind: 'tile', list: d.list, item: d.item, mode };
+    }
+    // прокрутка у краёв экрана во время переноса
+    function tickScroll() {
+        if (!press || !press.active) return;
+        const y = press.y, h = window.innerHeight, zone = 84;
+        let dy = 0;
+        if (y < zone) dy = -Math.ceil((zone - y) / 6);
+        else if (y > h - zone) dy = Math.ceil((y - (h - zone)) / 6);
+        if (dy) {
+            if (folderModal.classList.contains('open')) document.querySelector('.folder-card').scrollTop += dy;
+            else window.scrollBy(0, dy);
+            updateTarget();
+        }
+        press.raf = requestAnimationFrame(tickScroll);
+    }
+    function finishPress(ok) {
+        const pr = press;
+        if (!pr) return;
+        clearTimeout(pr.timer); cancelAnimationFrame(pr.raf);
+        press = null;
+        if (!pr.active) return;
+        suppressClickUntil = Date.now() + 150;
+        if (pr.ghost) pr.ghost.remove();
+        const src = dragItem, drop = pr.drop;
+        endDrag();
+        if (!ok || !src) return;
+        if (!pr.moved) { openActionSheet(pr.info.list, pr.info.item); return; }
+        if (!drop) return;
+        if (drop.kind === 'out') {
+            const parent = folderStack.length > 1 ? folderStack[folderStack.length - 2].items : savedLinks;
+            moveItem(src, parent, END, 'before');
+        } else if (drop.kind === 'end') moveItem(src, drop.list, END, 'before');
+        else moveItem(src, drop.list, drop.item, drop.mode);
+    }
+    window.addEventListener('pointermove', e => {
+        if (!press || e.pointerId !== press.id) return;
+        press.x = e.clientX; press.y = e.clientY;
+        const far = Math.hypot(e.clientX - press.sx, e.clientY - press.sy) > MOVE_TOL;
+        if (!press.active) { if (far) { clearTimeout(press.timer); press = null; } return; }
+        if (far) press.moved = true;
+        moveGhost(); updateTarget();
+    });
+    window.addEventListener('pointerup', e => { if (press && e.pointerId === press.id) finishPress(true); });
+    window.addEventListener('pointercancel', e => { if (press && e.pointerId === press.id) finishPress(false); });
+
+    /* ---------- Меню ярлыка ---------- */
+    const actionSheet = document.getElementById('action-sheet');
+    let actionCtx = null;
+    function openActionSheet(list, item) {
+        actionCtx = { list, item };
+        document.getElementById('action-title').textContent = item.name;
+        document.getElementById('act-newtab').style.display = (isFolder(item) || item.type === 'heading') ? 'none' : '';
+        actionSheet.classList.add('open');
+    }
+    function closeActionSheet() { actionSheet.classList.remove('open'); actionCtx = null; }
+    document.getElementById('act-cancel').addEventListener('click', closeActionSheet);
+    actionSheet.addEventListener('pointerdown', e => { if (e.target === actionSheet) closeActionSheet(); });
+    document.getElementById('act-newtab').addEventListener('click', () => {
+        const c = actionCtx; closeActionSheet();
+        if (c && c.item.url) window.open(c.item.url, '_blank');
+    });
+    document.getElementById('act-edit').addEventListener('click', () => {
+        const c = actionCtx; closeActionSheet();
+        if (!c) return;
+        const i = c.list.indexOf(c.item);
+        if (i >= 0) openEditor(c.list, i);
+    });
+    document.getElementById('act-del').addEventListener('click', () => {
+        const c = actionCtx; closeActionSheet();
+        if (!c) return;
+        const i = c.list.indexOf(c.item);
+        if (i >= 0) deleteItem(c.list, i);
+    });
+
     function makeDraggable(el, list, item) {
-        el.draggable = true;
+        el._dnd = { list, item };
+        attachPress(el, list, item);
+        el.draggable = !COARSE;
         el.querySelectorAll('img').forEach(i => { i.draggable = false; });
         el.addEventListener('dragstart', e => {
             dragItem = { list, item };
@@ -1340,6 +1925,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     function makeEndDropTarget(el, list) {
+        el._dnd = { list, end: true };
         el.addEventListener('dragover', e => {
             if (!dragItem) return;
             e.preventDefault();
@@ -1389,10 +1975,28 @@ document.addEventListener('DOMContentLoaded', function () {
         return img;
     }
 
+    function buildHeading(list, index) {
+        const item = list[index];
+        const el = document.createElement('div');
+        el.className = 'link-heading';
+        const label = document.createElement('span');
+        label.textContent = item.name;
+        el.append(label);
+        el.addEventListener('contextmenu', e => { e.preventDefault(); if (matchMedia('(pointer: fine)').matches && !press) openEditor(list, list.indexOf(item)); });
+        el.addEventListener('dblclick', () => openEditor(list, list.indexOf(item)));
+        const del = document.createElement('button');
+        del.type = 'button'; del.className = 'del-btn'; del.title = t('Удалить'); del.textContent = '×';
+        del.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); const i = list.indexOf(item); if (i >= 0) deleteItem(list, i); });
+        el.appendChild(del);
+        makeDraggable(el, list, item);
+        return el;
+    }
     function buildTile(list, index) {
+        if (list[index].type === 'heading') return buildHeading(list, index);
         const item = list[index], folder = isFolder(item);
         const el = document.createElement(folder ? 'div' : 'a');
         el.className = 'link-item' + (folder ? ' folder-item' : '');
+        if (item.span > 1 && list === savedLinks) el.dataset.span = String(Math.min(item.span, settings.cols));
         const box = document.createElement('div');
         box.className = 'link-icon';
         if (folder) {
@@ -1405,6 +2009,8 @@ document.addEventListener('DOMContentLoaded', function () {
             box.append(mini);
             if (item.bg) { box.style.setProperty('--tbg', item.bg); box.style.setProperty('--tfg', tileFg(item.bg)); }
             el.addEventListener('click', () => openFolder(item));
+            el.tabIndex = 0;
+            el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFolder(item); } });
         } else {
             el.href = item.url;
             const bg = tileBg(item);
@@ -1418,7 +2024,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (NAME_INSIDE) { box.append(name); el.append(box); }
         else el.append(box, name);
 
-        el.addEventListener('contextmenu', e => { e.preventDefault(); openEditor(list, index); });
+        el.addEventListener('contextmenu', e => { e.preventDefault(); if (matchMedia('(pointer: fine)').matches && !press) openEditor(list, index); });
         const del = document.createElement('button');
         del.type = 'button'; del.className = 'del-btn'; del.title = t('Удалить'); del.textContent = '×';
         del.addEventListener('click', e => {
@@ -1427,6 +2033,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (i >= 0) deleteItem(list, i);
         });
         el.appendChild(del);
+        el._ref = { list, item };
         makeDraggable(el, list, item);
         return el;
     }
@@ -1443,6 +2050,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (NAME_INSIDE) { nm.textContent = t('Добавить'); box.append(nm); add.append(box); }
         else { nm.textContent = '.'; nm.classList.add('ph'); add.append(box, nm); }
         add.addEventListener('click', () => openEditor(list, null));
+        add.tabIndex = 0;
+        add.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditor(list, null); } });
         makeEndDropTarget(add, list);
         return add;
     }
@@ -1468,7 +2077,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     document.getElementById('folder-close').addEventListener('click', closeFolder);
     document.getElementById('folder-back').addEventListener('click', () => { folderStack.pop(); renderFolderView(); });
-    folderModal.addEventListener('mousedown', e => { if (e.target === folderModal) closeFolder(); });
+    folderModal.addEventListener('pointerdown', e => { if (e.target === folderModal) closeFolder(); });
 
     function renderAll() { renderLinks(); renderFolderView(); }
 
@@ -1499,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', function () {
         (function walk(list, path) {
             for (const it of list) {
                 if (isFolder(it)) { out.push({ kind: 'folder', item: it, path }); walk(it.items || [], path.concat([it])); }
-                else out.push({ kind: 'link', item: it, path });
+                else if (it.type !== 'heading') out.push({ kind: 'link', item: it, path });
             }
         })(savedLinks, []);
         return out;
@@ -1513,10 +2122,58 @@ document.addEventListener('DOMContentLoaded', function () {
         if (url.includes(q)) return 3;
         return -1;
     }
+    // Калькулятор для быстрого поиска: + - * / ^ % и скобки, без eval
+    function calcExpr(src) {
+        const str = String(src).replace(/\s+/g, '').replace(/,/g, '.').replace(/[×]/g, '*').replace(/[÷]/g, '/');
+        if (!/^[\d+\-*/().^%]+$/.test(str) || !/\d/.test(str) || !/[+\-*/^%]/.test(str.replace(/^[-+]/, ''))) return null;
+        let pos = 0;
+        const peek = () => str[pos];
+        function expr() {
+            let v = term();
+            while (peek() === '+' || peek() === '-') {
+                const o = str[pos++];
+                const start = pos;
+                let r = term();
+                // «100-30%» — проценты считаются от первого числа, как в обычном калькуляторе
+                if (/^\d*\.?\d+%$/.test(str.slice(start, pos))) r = v * r;
+                v = o === '+' ? v + r : v - r;
+            }
+            return v;
+        }
+        function term() { let v = power(); while (peek() === '*' || peek() === '/') { const o = str[pos++]; const r = power(); v = o === '*' ? v * r : v / r; } return v; }
+        function power() { const b = unary(); if (peek() === '^') { pos++; return Math.pow(b, power()); } return b; }
+        function unary() { if (peek() === '-') { pos++; return -unary(); } if (peek() === '+') { pos++; return unary(); } return postfix(); }
+        function postfix() { let v = primary(); while (peek() === '%') { pos++; v = v / 100; } return v; }
+        function primary() {
+            if (peek() === '(') { pos++; const v = expr(); if (peek() !== ')') throw new Error('paren'); pos++; return v; }
+            const m = /^\d*\.?\d+(?:e[+-]?\d+)?|^\d+\.?/i.exec(str.slice(pos));
+            if (!m) throw new Error('num');
+            pos += m[0].length; return parseFloat(m[0]);
+        }
+        try {
+            const v = expr();
+            if (pos !== str.length || !isFinite(v)) return null;
+            return String(parseFloat(v.toPrecision(12)));
+        } catch (e) { return null; }
+    }
+    const SEARCH_KEYWORDS = {
+        g: ['Google', 'https://www.google.com/search?q=%s'], ddg: ['DuckDuckGo', 'https://duckduckgo.com/?q=%s'],
+        ya: ['Yandex', 'https://yandex.ru/search/?text=%s'], bing: ['Bing', 'https://www.bing.com/search?q=%s'],
+        yt: ['YouTube', 'https://www.youtube.com/results?search_query=%s'], gh: ['GitHub', 'https://github.com/search?q=%s'],
+        w: ['Wikipedia', 'https://%l.wikipedia.org/w/index.php?search=%s'], maps: ['Google Maps', 'https://www.google.com/maps/search/%s'],
+        tr: ['Google Translate', 'https://translate.google.com/?sl=auto&tl=%l&text=%s&op=translate']
+    };
+    const calcSvg = () => svgIcon([['path', { d: 'M6 9h12M6 15h12' }]]);
+    function copyText(text) { try { navigator.clipboard.writeText(text).catch(() => {}); } catch (e) { /* ignore */ } }
     function renderQs() {
         const raw = qsInput.value.trim();
         const q = raw.toLowerCase();
         qsItems = [];
+        const calc = calcExpr(raw);
+        if (calc !== null) qsItems.push({ type: 'calc', value: calc });
+        const km = /^(\S+)\s+(.+)$/.exec(raw);
+        const kw = km && SEARCH_KEYWORDS[km[1].toLowerCase()];
+        if (kw) qsItems.push({ type: 'kw', site: kw[0], q: km[2], url: kw[1].replace('%l', LANG).replace('%s', encodeURIComponent(km[2])) });
         if (q) {
             collectAll().map(e => ({ e, s: qsScore(e, q) })).filter(x => x.s >= 0)
                 .sort((a, b) => a.s - b.s).slice(0, 8)
@@ -1533,7 +2190,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const sm = document.createElement('small'); sm.textContent = sub;
                 row.append(icon, b, sm);
             };
-            if (it.type === 'web') {
+            if (it.type === 'calc') {
+                addCells(calcSvg(), '= ' + it.value, t('Копировать'));
+            } else if (it.type === 'kw') {
+                addCells(searchSvg(), t('Искать «{q}» на {site}', { q: it.q, site: it.site }), '');
+            } else if (it.type === 'web') {
                 addCells(searchSvg(), t('Искать «{q}»', { q: it.q }), currentEngine().name);
             } else if (it.type === 'folder') {
                 const where = it.entry.path.map(f => f.name).join(' › ');
@@ -1549,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 qsIndex = i;
                 qsList.querySelectorAll('.qs-row').forEach((r, k) => r.classList.toggle('active', k === i));
             });
-            row.addEventListener('mousedown', e => { e.preventDefault(); qsOpen(i); });
+            row.addEventListener('click', () => qsOpen(i));
             qsList.appendChild(row);
         });
     }
@@ -1565,6 +2226,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const it = qsItems[i];
         if (!it) return;
         closeQs();
+        if (it.type === 'calc') { copyText(it.value); showToast(t('Скопировано: {v}', { v: it.value })); return; }
+        if (it.type === 'kw') { location.href = it.url; return; }
         if (it.type === 'link') location.href = it.entry.item.url;
         else if (it.type === 'folder') {
             folderStack = it.entry.path.concat([it.entry.item]);
@@ -1578,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function () {
         else if (e.key === 'ArrowUp') { e.preventDefault(); qsIndex = (qsIndex - 1 + qsItems.length) % Math.max(1, qsItems.length); renderQs(); }
         else if (e.key === 'Enter') { e.preventDefault(); qsOpen(qsIndex); }
     });
-    qs.addEventListener('mousedown', e => { if (e.target === qs) closeQs(); });
+    qs.addEventListener('pointerdown', e => { if (e.target === qs) closeQs(); });
 
     document.addEventListener('keydown', e => {
         if (!settings.quickSearch) return;
@@ -1591,13 +2254,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
+    document.getElementById('new-heading-btn').addEventListener('click', () => {
+        document.getElementById('settings').classList.remove('open');
+        openEditor(savedLinks, null, 'heading');
+    });
     document.getElementById('new-folder-btn').addEventListener('click', () => {
         document.getElementById('settings').classList.remove('open');
         openEditor(savedLinks, null, 'folder');
     });
 
     /* ---------- Импорт закладок из HTML браузера ---------- */
-    function countLinks(items) { return items.reduce((n, it) => n + (isFolder(it) ? countLinks(it.items || []) : 1), 0); }
+    function countLinks(items) { return items.reduce((n, it) => n + (isFolder(it) ? countLinks(it.items || []) : (it.type === 'heading' ? 0 : 1)), 0); }
 
     function parseBookmarksHtml(text) {
         const doc = new DOMParser().parseFromString(text, 'text/html');
@@ -1629,7 +2296,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let bmFlat = [];
     function closeBm() { bmModal.classList.remove('open'); }
     document.getElementById('bm-cancel').addEventListener('click', closeBm);
-    bmModal.addEventListener('mousedown', e => { if (e.target === bmModal) closeBm(); });
+    bmModal.addEventListener('pointerdown', e => { if (e.target === bmModal) closeBm(); });
 
     document.getElementById('bm-import-btn').addEventListener('click', () => {
         document.getElementById('settings').classList.remove('open');
@@ -1682,6 +2349,7 @@ document.addEventListener('DOMContentLoaded', function () {
         (function walk(list) {
             for (const it of list) {
                 if (isFolder(it)) { walk(it.items || []); continue; }
+                if (it.type === 'heading') continue;
                 const d = domainOf(it.url);
                 const siteIcon = !it.icon || it.auto || (d && it.icon === cache[d]) || (/favicon/.test(it.icon) && !it.icon.startsWith('data:'));
                 if (siteIcon) { it._old = it.icon; it.icon = ''; touched.push(it); }
@@ -1695,11 +2363,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /* ===================== Работа с файлами ===================== */
-    function pickFile(accept, handler) {
+    function pickFile(accept, handler, multiple) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = accept;
-        input.addEventListener('change', () => { if (input.files[0]) handler(input.files[0]); });
+        if (multiple) input.multiple = true;
+        input.addEventListener('change', () => { if (input.files[0]) handler(multiple ? Array.from(input.files) : input.files[0]); });
         input.click();
     }
 
@@ -1732,12 +2401,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const prev = settings.bgImage;
             settings.bgImage = data;
             settings.bgMode = 'image';
-            try {
-                localStorage.setItem('homeSettings', JSON.stringify(settings));
+            if (setStorage('homeSettings', settings)) {
                 syncSettingsUI();
                 applyAppearance();
                 return;
-            } catch (e) { settings.bgImage = prev; }
+            }
+            settings.bgImage = prev;
         }
         alert(t('Картинка слишком большая для хранилища браузера. Выберите файл поменьше.'));
     }
@@ -1747,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const $ = id => document.getElementById(id);
 
     $('gear-btn').addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('open'); });
-    document.addEventListener('mousedown', e => {
+    document.addEventListener('pointerdown', e => {
         if (panel.classList.contains('open') && !panel.contains(e.target) && !$('gear-btn').contains(e.target)) {
             panel.classList.remove('open');
         }
@@ -1785,6 +2454,11 @@ document.addEventListener('DOMContentLoaded', function () {
         $('name-mode').value = settings.nameMode;
         $('show-search').checked = !!settings.showSearch;
         $('quick-search').checked = !!settings.quickSearch;
+        $('show-clock').checked = !!settings.showClock;
+        $('show-notes').checked = !!settings.showNotes;
+        $('auto-dim').checked = !!settings.autoDim;
+        $('bg-rotate').value = settings.bgRotate;
+        renderThumbs();
         $('lang-select').value = settings.lang;
         $('blur-range').value = settings.bgBlur;
         $('blur-val').textContent = settings.bgBlur + 'px';
@@ -1845,6 +2519,41 @@ document.addEventListener('DOMContentLoaded', function () {
         settings.lang = e.target.value;
         saveSettings(); setLang(); refreshEngineUI(); renderAll(); syncSettingsUI();
     });
+    $('show-clock').addEventListener('change', e => update(() => { settings.showClock = e.target.checked; }));
+    $('show-notes').addEventListener('change', e => update(() => { settings.showNotes = e.target.checked; }));
+    $('auto-dim').addEventListener('change', e => update(() => { settings.autoDim = e.target.checked; }));
+    $('bg-rotate').addEventListener('change', e => update(() => { settings.bgRotate = e.target.value; }));
+    function renderThumbs() {
+        const box = $('bg-thumbs');
+        box.replaceChildren();
+        (settings.bgImages || []).forEach((data, i) => {
+            const th = document.createElement('div');
+            th.className = 'bg-thumb';
+            th.style.backgroundImage = 'url("' + data + '")';
+            const x = document.createElement('button');
+            x.type = 'button'; x.textContent = '×'; x.title = t('Удалить');
+            x.addEventListener('click', () => update(() => { settings.bgImages.splice(i, 1); }));
+            th.append(x);
+            box.append(th);
+        });
+    }
+    $('bg-add').addEventListener('click', () => pickFile('image/*', async files => {
+        let added = 0;
+        for (const f of files) {
+            if ((settings.bgImages || []).length >= 8) { showToast(t('Не больше 8 картинок в слайдшоу')); break; }
+            try {
+                const data = await resizeImage(f, 1920, 'image/jpeg', 0.8);
+                settings.bgImages = (settings.bgImages || []).concat([data]);
+                if (!setStorage('homeSettings', settings)) { settings.bgImages.pop(); alert(t('Картинка слишком большая для хранилища браузера. Выберите файл поменьше.')); break; }
+                added++;
+            } catch (err) { showToast(err.message); }
+        }
+        if (added) {
+            if (settings.bgRotate === 'off') settings.bgRotate = 'day';
+            settings.bgMode = 'image';
+            saveSettings(); applyAppearance(); syncSettingsUI();
+        }
+    }, true));
     $('quick-search').addEventListener('change', e => update(() => { settings.quickSearch = e.target.checked; }));
     $('show-search').addEventListener('change', e => update(() => { settings.showSearch = e.target.checked; }));
 
@@ -2002,6 +2711,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const exportSettings = Object.assign({}, settings);
         const bg = dataUrlToFile(settings.bgImage, 'background');
         if (bg) { files.push(bg); exportSettings.bgImage = bg.name; }
+        if (settings.bgImages && settings.bgImages.length) {
+            exportSettings.bgImages = settings.bgImages.map((d, i) => {
+                const f = dataUrlToFile(d, 'backgrounds/bg_' + String(i + 1).padStart(2, '0'));
+                if (f) { files.push(f); return f.name; }
+                return d;
+            });
+        }
         let n = 0;
         const exportItems = list => list.map(it => {
             if (isFolder(it)) return Object.assign({}, it, { items: exportItems(it.items || []) });
@@ -2010,7 +2726,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (f) { files.push(f); out.icon = f.name; }
             return out;
         });
-        const manifest = { format: 'homepage-backup', version: 2, quickLinks: exportItems(savedLinks), customGradient: [gradient], homeSettings: exportSettings };
+        const manifest = { format: 'homepage-backup', version: 2, quickLinks: exportItems(savedLinks), customGradient: [gradient], homeSettings: exportSettings, homeNotes: notesText.value };
         files.unshift({ name: 'settings.json', data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(makeZip(files));
@@ -2039,20 +2755,22 @@ document.addEventListener('DOMContentLoaded', function () {
                     return ref;
                 };
                 if (data.homeSettings && data.homeSettings.bgImage) data.homeSettings.bgImage = await resolveRef(data.homeSettings.bgImage);
+                if (data.homeSettings && Array.isArray(data.homeSettings.bgImages)) data.homeSettings.bgImages = await Promise.all(data.homeSettings.bgImages.map(resolveRef));
                 const resolveItems = async list => {
                     for (const it of list) {
                         if (it && it.type === 'folder') await resolveItems(it.items || []);
-                        else if (it) it.icon = await resolveRef(it.icon);
+                        else if (it && it.type !== 'heading') it.icon = await resolveRef(it.icon);
                     }
                 };
                 if (data.quickLinks) await resolveItems(data.quickLinks);
-                try {
-                    if (data.quickLinks) localStorage.setItem('quickLinks', JSON.stringify(data.quickLinks));
-                    if (data.customGradient) localStorage.setItem('customGradient', JSON.stringify(data.customGradient));
-                    if (data.savedFavicons) localStorage.setItem('savedFavicons', JSON.stringify(data.savedFavicons));
-                    if (data.homeSettings) localStorage.setItem('homeSettings', JSON.stringify(data.homeSettings));
-                } catch (err) {
-                    alert(t('Не удалось сохранить: хранилище браузера переполнено.')); return;
+                const writes = [];
+                if (data.quickLinks) writes.push(['quickLinks', data.quickLinks]);
+                if (data.customGradient) writes.push(['customGradient', data.customGradient]);
+                if (data.savedFavicons) writes.push(['savedFavicons', data.savedFavicons]);
+                if (data.homeSettings) writes.push(['homeSettings', data.homeSettings]);
+                if (data.homeNotes !== undefined) writes.push(['homeNotes', data.homeNotes]);
+                for (const [k, v] of writes) {
+                    if (!(await Store.setAsync(k, v))) { alert(t('Не удалось сохранить: хранилище браузера переполнено.')); return; }
                 }
                 location.reload();
             } catch (err) { alert(t('Ошибка при импорте: {m}', { m: err.message })); }
@@ -2103,13 +2821,216 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+
+    /* ===================== Синхронизация: GitHub Gist + шифрование ===================== */
+    const syncEls = { token: $('sync-token'), gist: $('sync-gist'), pass: $('sync-pass'), scope: $('sync-scope'), remember: $('sync-remember'), status: $('sync-status') };
+    const syncCfg = Object.assign({ gistId: '', remember: false, scope: 'links', lastSync: 0, token: '', pass: '' }, getStorage('syncCfg', {}));
+    function syncFillUI() {
+        syncEls.token.value = syncCfg.token || '';
+        syncEls.pass.value = syncCfg.pass || '';
+        syncEls.gist.value = syncCfg.gistId || '';
+        syncEls.scope.value = syncCfg.scope;
+        syncEls.remember.checked = !!syncCfg.remember;
+        syncSetStatus(syncCfg.lastSync ? t('Последняя синхронизация: {t}', { t: new Date(syncCfg.lastSync).toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US') }) : '');
+    }
+    function syncSetStatus(text) { syncEls.status.textContent = text; }
+    function syncRead() {
+        syncCfg.token = syncEls.token.value.trim();
+        syncCfg.pass = syncEls.pass.value;
+        syncCfg.gistId = syncEls.gist.value.trim();
+        syncCfg.scope = syncEls.scope.value;
+        syncCfg.remember = syncEls.remember.checked;
+    }
+    function syncSave() {
+        const keep = Object.assign({}, syncCfg);
+        if (!keep.remember) { keep.token = ''; keep.pass = ''; }
+        setStorage('syncCfg', keep);
+    }
+    ['change', 'input'].forEach(ev => [syncEls.token, syncEls.gist, syncEls.pass, syncEls.scope, syncEls.remember].forEach(el => el.addEventListener(ev, () => { syncRead(); syncSave(); })));
+
+    const toB64 = bytes => { let str = ''; for (let i = 0; i < bytes.length; i += 0x8000) str += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(str); };
+    const fromB64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+    async function streamBytes(stream, bytes) {
+        const w = stream.writable.getWriter(); w.write(bytes); w.close();
+        return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+    }
+    async function deriveKey(pass, salt) {
+        const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+        return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    }
+    const SYNC_CHUNK = 600000;
+    async function packPayload(obj, pass) {
+        let data = await streamBytes(new CompressionStream('gzip'), new TextEncoder().encode(JSON.stringify(obj)));
+        const header = { v: 1, enc: false };
+        if (pass) {
+            const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+            const key = await deriveKey(pass, salt);
+            data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data));
+            header.enc = true; header.salt = toB64(salt); header.iv = toB64(iv);
+        }
+        const str = toB64(data), parts = [];
+        for (let i = 0; i < str.length; i += SYNC_CHUNK) parts.push(str.slice(i, i + SYNC_CHUNK));
+        header.parts = parts.length;
+        return { header, parts };
+    }
+    async function unpackPayload(header, text, pass) {
+        let data = fromB64(text);
+        if (header.enc) {
+            if (!pass) throw new Error(t('Нужен пароль шифрования'));
+            const key = await deriveKey(pass, fromB64(header.salt));
+            try { data = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(header.iv) }, key, data)); }
+            catch (e) { throw new Error(t('Неверный пароль или данные повреждены')); }
+        }
+        const raw = await streamBytes(new DecompressionStream('gzip'), data);
+        return JSON.parse(new TextDecoder().decode(raw));
+    }
+    async function ghApi(method, path, body) {
+        const r = await fetch('https://api.github.com' + path, {
+            method,
+            headers: Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + syncCfg.token, 'X-GitHub-Api-Version': '2022-11-28' }, body ? { 'Content-Type': 'application/json' } : {}),
+            body: body ? JSON.stringify(body) : undefined
+        });
+        if (!r.ok) {
+            let msg = '';
+            try { msg = (await r.json()).message || ''; } catch (e) { /* ignore */ }
+            throw new Error(r.status + (msg ? ' ' + msg : ''));
+        }
+        return r.json();
+    }
+    const syncBusy = (btn, on) => { btn.disabled = on; };
+    $('sync-push').addEventListener('click', async () => {
+        syncRead();
+        if (!syncCfg.token) { syncSetStatus(t('Введите токен GitHub')); return; }
+        const btn = $('sync-push');
+        syncBusy(btn, true); syncSetStatus(t('Отправляю…'));
+        try {
+            try { await fillMissingIcons(savedLinks); } catch (e) { /* ничего */ }
+            const payload = { format: 'homepage-sync', v: 1, savedAt: Date.now(), scope: syncCfg.scope, links: savedLinks, notes: notesText.value };
+            if (syncCfg.scope !== 'links') {
+                const st = Object.assign({}, settings);
+                if (syncCfg.scope !== 'all') { delete st.bgImage; delete st.bgImages; }
+                payload.settings = st; payload.gradient = gradient;
+            }
+            const { header, parts } = await packPayload(payload, syncCfg.pass);
+            const files = { 'homepage-sync.json': { content: JSON.stringify(header) } };
+            parts.forEach((part, i) => { files['data-' + String(i + 1).padStart(3, '0') + '.txt'] = { content: part }; });
+            let gist;
+            if (syncCfg.gistId) {
+                const old = await ghApi('GET', '/gists/' + encodeURIComponent(syncCfg.gistId));
+                Object.keys(old.files || {}).forEach(name => { if (/^data-\d+\.txt$/.test(name) && !files[name]) files[name] = null; });
+                gist = await ghApi('PATCH', '/gists/' + encodeURIComponent(syncCfg.gistId), { files });
+            } else {
+                gist = await ghApi('POST', '/gists', { description: 'Home page sync (generated, do not edit)', public: false, files });
+                syncCfg.gistId = gist.id; syncEls.gist.value = gist.id;
+            }
+            syncCfg.lastSync = Date.now(); syncSave();
+            syncFillUI();
+            showToast(t('Отправлено в Gist'));
+        } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); }
+        syncBusy(btn, false);
+    });
+    $('sync-pull').addEventListener('click', async () => {
+        syncRead();
+        if (!syncCfg.token) { syncSetStatus(t('Введите токен GitHub')); return; }
+        if (!syncCfg.gistId) { syncSetStatus(t('Введите Gist ID')); return; }
+        const btn = $('sync-pull');
+        syncBusy(btn, true); syncSetStatus(t('Загружаю…'));
+        try {
+            const gist = await ghApi('GET', '/gists/' + encodeURIComponent(syncCfg.gistId));
+            const hf = gist.files && gist.files['homepage-sync.json'];
+            if (!hf) throw new Error(t('В Gist нет данных страницы'));
+            const header = JSON.parse(hf.content);
+            let text = '';
+            for (let i = 1; i <= header.parts; i++) {
+                const f = gist.files['data-' + String(i).padStart(3, '0') + '.txt'];
+                if (!f || f.truncated) throw new Error(t('Данные в Gist неполные'));
+                text += f.content;
+            }
+            const payload = await unpackPayload(header, text, syncCfg.pass);
+            if (payload.format !== 'homepage-sync') throw new Error(t('Неизвестный формат данных'));
+            const when = new Date(payload.savedAt).toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US');
+            if (!confirm(t('Заменить ярлыки и заметки данными из Gist от {t}?', { t: when }))) { syncSetStatus(''); syncBusy(btn, false); return; }
+            const writes = [['quickLinks', payload.links || []], ['homeNotes', payload.notes || '']];
+            if (payload.settings) {
+                const st = Object.assign({}, payload.settings);
+                if (!('bgImage' in st)) { st.bgImage = settings.bgImage; st.bgImages = settings.bgImages; }
+                writes.push(['homeSettings', st]);
+                if (payload.gradient) writes.push(['customGradient', [payload.gradient]]);
+            }
+            syncCfg.lastSync = Date.now(); syncSave();
+            for (const [k, v] of writes) { if (!(await Store.setAsync(k, v))) throw new Error(t('Не удалось сохранить: хранилище браузера переполнено.')); }
+            location.reload();
+        } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); syncBusy(btn, false); }
+    });
+    syncFillUI();
+
+    /* ===================== Клавиатура: стрелки, Delete ===================== */
+    document.addEventListener('keydown', e => {
+        const arrows = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+        if (!arrows.includes(e.key) && e.key !== 'Delete') return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const tg = e.target;
+        if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) return;
+        const folderOpen = folderModal.classList.contains('open');
+        if (document.querySelector('.modal.open') && !folderOpen) return;
+        if (document.getElementById('settings').classList.contains('open') && !(tg && tg.closest && tg.closest('.link-item'))) return;
+        const scope = folderOpen ? folderGrid : linksContainer;
+        const tiles = Array.from(scope.querySelectorAll('.link-item'));
+        if (!tiles.length) return;
+        const curEl = tg && tg.closest ? tg.closest('.link-item') : null;
+        const cur = tiles.indexOf(curEl);
+        if (e.key === 'Delete') {
+            if (cur >= 0 && curEl._ref) { e.preventDefault(); const i = curEl._ref.list.indexOf(curEl._ref.item); if (i >= 0) deleteItem(curEl._ref.list, i); }
+            return;
+        }
+        e.preventDefault();
+        if (cur < 0) { tiles[0].focus(); return; }
+        const r = curEl.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        let best = -1, bestScore = Infinity;
+        tiles.forEach((tile, i) => {
+            if (i === cur) return;
+            const q = tile.getBoundingClientRect();
+            const dx = q.left + q.width / 2 - cx, dy = q.top + q.height / 2 - cy;
+            let ok, score;
+            if (e.key === 'ArrowRight') { ok = dx > 5 && Math.abs(dy) < r.height / 2; score = dx + Math.abs(dy) * 2; }
+            else if (e.key === 'ArrowLeft') { ok = dx < -5 && Math.abs(dy) < r.height / 2; score = -dx + Math.abs(dy) * 2; }
+            else if (e.key === 'ArrowDown') { ok = dy > r.height / 3; score = dy + Math.abs(dx) * 2; }
+            else { ok = dy < -r.height / 3; score = -dy + Math.abs(dx) * 2; }
+            if (ok && score < bestScore) { best = i; bestScore = score; }
+        });
+        if (best >= 0) tiles[best].focus();
+    });
+
+    /* ===================== Отмена / повтор ===================== */
+    document.addEventListener('keydown', e => {
+        if (!(e.ctrlKey || e.metaKey) || e.altKey || e.code !== 'KeyZ' && e.code !== 'KeyY') return;
+        const tg = e.target;
+        if (tg && (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName) || tg.isContentEditable)) return;
+        e.preventDefault();
+        if (e.code === 'KeyY' || e.shiftKey) redoLast(); else undoLast();
+    });
+    $('undo-btn').addEventListener('click', undoLast);
+    $('redo-btn').addEventListener('click', redoLast);
+
+    /* ===================== Панель снизу и поиск на телефоне ===================== */
+    new MutationObserver(() => {
+        document.getElementById('scrim').classList.toggle('show', panel.classList.contains('open'));
+    }).observe(panel, { attributes: true, attributeFilter: ['class'] });
+    document.getElementById('sheet-close').addEventListener('click', () => panel.classList.remove('open'));
+    if (COARSE) {   // на телефоне строка поиска открывает быстрый поиск (там же поиск в интернете)
+        searchInput.readOnly = true;
+        searchInput.addEventListener('click', () => openQs(''));
+        document.getElementById('search-button').addEventListener('click', () => openQs(''));
+    }
+
     /* ===================== Старт ===================== */
     window.addEventListener('resize', applyAppearance);
+    setInterval(applyAppearance, 60000);
     setLang();
     applyAppearance();
     syncSettingsUI();
     renderLinks();
-});
+}
 </script>
 </body>
 </html>
