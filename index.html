@@ -154,12 +154,11 @@
         background: #fff; border-radius: calc(var(--ico) * 0.22); box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     }
     .badge img { width: 100%; height: 100%; object-fit: contain; }
+    .link-icon > img.bare { border-radius: calc(var(--ico) * 0.2); filter: drop-shadow(0 2px 5px rgba(0,0,0,0.35)); }
     .t-letter {
         display: flex; align-items: center; justify-content: center; width: var(--ico); height: var(--ico);
         font-size: calc(var(--ico) * 0.85); font-weight: 600; line-height: 1;
     }
-    /* иконка на весь ярлык */
-    body.t-fill .link-icon > img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
     /* название под ярлыком */
     .link-name {
         margin-top: 6px; width: var(--tw); height: 18px;
@@ -171,10 +170,6 @@
     .link-icon .link-name {
         margin: 0; width: 92%; height: auto; font-size: var(--tfs); line-height: 1.3;
         color: inherit; text-shadow: none;
-    }
-    body.t-fill .link-icon .link-name {
-        position: absolute; left: 0; right: 0; bottom: 0; width: 100%; padding: 20px 8px 7px;
-        color: #fff; background: linear-gradient(transparent, rgba(0,0,0,0.7));
     }
     .fmini { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6%; width: var(--fmini); height: var(--fmini); }
     .fmini img { width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 22%; padding: 10%; }
@@ -509,9 +504,9 @@
         <select id="tile-style" style="flex:1">
             <option value="card">Карточка (цвет по иконке)</option>
             <option value="dark">Тёмная плитка</option>
-            <option value="fill">Иконка на весь ярлык</option>
         </select>
     </div>
+    <label class="check"><input type="checkbox" id="icon-plate"> Белая подложка под иконкой</label>
     <div class="row">
         <label>Название</label>
         <select id="name-mode" style="flex:1">
@@ -661,6 +656,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tileW: 270,
         tileH: 150,
         tileStyle: 'card',
+        iconPlate: false,
         nameMode: 'auto',
         bgBlur: 0,
         bgBright: 100,
@@ -676,6 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const DEFAULT_GRADIENT = { color1: '#3a1c0f', color2: '#c2461a', angle: 45, type: 'linear' };
 
     let settings = Object.assign({}, DEFAULTS, getStorage('homeSettings', {}));
+    if (settings.tileStyle === 'fill') settings.tileStyle = 'card';   // стиль «Иконка на весь ярлык» убран
     let gradient = Object.assign({}, DEFAULT_GRADIENT, getStorage('customGradient')[0] || {});
 
     /* ===================== Язык / Language ===================== */
@@ -706,9 +703,9 @@ document.addEventListener('DOMContentLoaded', function () {
  "Квадрат": "Square",
  "Широкий": "Wide",
  "Стиль ярлыка": "Tile style",
+ "Белая подложка под иконкой": "White plate behind the icon",
  "Карточка (цвет по иконке)": "Card (color from icon)",
  "Тёмная плитка": "Dark tile",
- "Иконка на весь ярлык": "Icon fills the tile",
  "Название": "Name",
  "Авто (внутри у широких)": "Auto (inside if wide)",
  "Внутри ярлыка": "Inside the tile",
@@ -951,7 +948,6 @@ document.addEventListener('DOMContentLoaded', function () {
         root.style.setProperty('--fmini', Math.max(22, Math.round(NAME_INSIDE ? th * 0.5 : Math.min(tw, th) * 0.7)) + 'px');
         root.style.setProperty('--tfs', (NAME_INSIDE ? Math.max(11, Math.min(16, Math.round(th * 0.115))) : 13) + 'px');
         document.body.classList.toggle('with-search', !!settings.showSearch);
-        document.body.classList.toggle('t-fill', settings.tileStyle === 'fill');
         root.style.setProperty('--tile-radius', Math.round(settings.tileRadius / 100 * Math.min(tw, th)) + 'px');
         root.style.setProperty('--bg-blur', settings.bgBlur + 'px');
         root.style.setProperty('--bg-bright', settings.bgBright / 100);
@@ -1362,9 +1358,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const firstLetter = n => (String(n || '?').trim().charAt(0) || '?').toUpperCase();
     function tileBg(item) {
         if (item.bg) return item.bg;
-        if (settings.tileStyle === 'card') return item.autoBg || ('hsl(' + hashHue(item.name || item.url || '') + ' 42% 36%)');
+        if (settings.tileStyle === 'card') {
+            if (item.autoBg) return settings.iconPlate ? item.autoBg : shadeColor(item.autoBg, 0.6);
+            return 'hsl(' + hashHue(item.name || item.url || '') + ' 42% 36%)';
+        }
         return null;
     }
+    // темнее исходного цвета, чтобы иконка без белой подложки не сливалась с фоном
+    function shadeColor(hex, k) { const [r, g, b] = hexToRgb(hex); return rgbToHex(r * k, g * k, b * k); }
     function tileFg(bg) { return /^#/.test(bg) ? (lightness(bg) > 0.62 ? '#1d1d1d' : '#ffffff') : '#ffffff'; }
     function letterNode(item) { const l = document.createElement('div'); l.className = 't-letter'; l.textContent = firstLetter(item.name); return l; }
     function iconNode(item) {
@@ -1373,6 +1374,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const img = new Image();
         img.alt = ''; img.draggable = false;
         img.src = hasIcon ? item.icon : FALLBACK_ICON;
+        if (settings.tileStyle === 'card' && !settings.iconPlate) {
+            img.classList.add('bare');
+            img.onerror = () => img.replaceWith(letterNode(item));
+            return img;
+        }
         if (settings.tileStyle === 'card') {
             const b = document.createElement('div');
             b.className = 'badge';
@@ -1775,6 +1781,7 @@ document.addEventListener('DOMContentLoaded', function () {
         $('tile-h-range').value = settings.tileH;
         $('tile-h-val').textContent = settings.tileH + 'px';
         $('tile-style').value = settings.tileStyle;
+        $('icon-plate').checked = !!settings.iconPlate;
         $('name-mode').value = settings.nameMode;
         $('show-search').checked = !!settings.showSearch;
         $('quick-search').checked = !!settings.quickSearch;
@@ -1821,6 +1828,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('#ratio-btns [data-ratio]').forEach(b => b.addEventListener('click', () => {
         update(() => { settings.tileH = Math.round(settings.tileW / parseFloat(b.dataset.ratio)); }, true);
     }));
+    $('icon-plate').addEventListener('change', e => update(() => { settings.iconPlate = e.target.checked; }, true));
     $('tile-style').addEventListener('change', e => update(() => { settings.tileStyle = e.target.value; }, true));
     $('name-mode').addEventListener('change', e => update(() => { settings.nameMode = e.target.value; }, true));
     $('radius-range').addEventListener('input', e => update(() => { settings.tileRadius = +e.target.value; }));
