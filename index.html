@@ -286,7 +286,7 @@
     /* С часами — одна общая подложка, погода справа от часов */
     body.show-clock .top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 26px; width: fit-content; max-width: 100%; margin: 0 auto 20px; padding: 6px 24px 10px; }
     body:not(.show-clock) .top-row { background: none; border: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; }
-    body.show-clock .top-row .clock, body.show-clock .top-row .weather { margin: 0; padding: 0; background: none; border: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    body.show-clock .top-row .clock, body.show-clock .top-row .weather { margin: 0; padding: 0; background: none; border: none; border-radius: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
     body.show-clock .top-row .weather:not(.hidden) { padding-left: 26px; border-left: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
     @media (max-width: 520px) { body.show-clock .top-row .weather:not(.hidden) { padding: 8px 0 0; border-left: none; border-top: 1px solid color-mix(in srgb, var(--text) 25%, transparent); } }   /* на узком экране погода переносится под часы */
     /* Панель обоев дня: листание назад/вперёд и подпись */
