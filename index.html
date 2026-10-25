@@ -3480,8 +3480,19 @@ function main() {
         await syncRememberGist(best.id);
         return ghApi('GET', '/gists/' + encodeURIComponent(best.id));
     }
-    function syncHeader(gist) {
-        try { return JSON.parse(gist.files[SYNC_FILE].content); } catch (e) { return null; }
+    // API отдаёт содержимое файлов Gist не целиком (обрезает большие, у крупных Gist'ов — и пустые),
+    // тогда дочитываем файл по raw_url
+    async function gistFileText(gist, name) {
+        const f = gist && gist.files && gist.files[name];
+        if (!f) return null;
+        if (typeof f.content === 'string' && f.content && !f.truncated) return f.content;
+        if (!f.raw_url) return null;
+        const r = await fetch(f.raw_url, { cache: 'no-store' });
+        if (!r.ok) throw new Error(r.status + ' ' + name);
+        return r.text();
+    }
+    async function syncHeader(gist) {
+        try { return JSON.parse(await gistFileText(gist, SYNC_FILE)); } catch (e) { return null; }
     }
     async function syncPushTo(old) {
         try { await fillMissingIcons(savedLinks); } catch (e) { /* ничего */ }
@@ -3510,13 +3521,13 @@ function main() {
     }
     // Загружает данные из Gist и перезагружает страницу; без auto сначала спрашивает
     async function syncPullFrom(gist, auto) {
-        const header = syncHeader(gist);
+        const header = await syncHeader(gist);
         if (!header) throw new Error(t('В Gist нет данных страницы'));
         let text = '';
         for (let i = 1; i <= header.parts; i++) {
-            const f = gist.files['data-' + String(i).padStart(3, '0') + '.txt'];
-            if (!f || f.truncated) throw new Error(t('Данные в Gist неполные'));
-            text += f.content;
+            const part = await gistFileText(gist, 'data-' + String(i).padStart(3, '0') + '.txt');
+            if (!part) throw new Error(t('Данные в Gist неполные'));
+            text += part;
         }
         const payload = await unpackPayload(header, text, syncCfg.pass);
         if (payload.format !== 'homepage-sync') throw new Error(t('Неизвестный формат данных'));
@@ -3579,7 +3590,7 @@ function main() {
         syncRunning = true; syncChecked = Date.now();
         try {
             const gist = await syncFindGist();
-            const remoteAt = (gist && (syncHeader(gist) || {}).savedAt) || 0;
+            const remoteAt = (gist && ((await syncHeader(gist)) || {}).savedAt) || 0;
             if (remoteAt > syncCfg.remoteAt) {
                 const quiet = !syncCfg.dirty && syncCfg.remoteAt > 0;
                 const when = new Date(remoteAt).toLocaleString(syncLocale());
