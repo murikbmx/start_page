@@ -218,11 +218,27 @@
         display: none;
     }
     .settings.open { display: block; }
-    .settings h4 {
-        margin: 18px 0 10px; font-size: 13px; font-weight: 600;
-        color: var(--panel-muted);
+    /* Разделы настроек сворачиваются; какие открыты — помнит браузер */
+    .sect { border-top: 1px solid var(--panel-line); }
+    .sect > summary {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 13px 2px; list-style: none; cursor: pointer; user-select: none;
+        font-size: 15px; font-weight: 600; color: var(--panel-text);
     }
-    .settings h4:first-child { margin-top: 0; }
+    .sect > summary::-webkit-details-marker { display: none; }
+    .sect > summary::after {
+        content: ''; width: 7px; height: 7px; margin-right: 4px;
+        border-right: 1.7px solid var(--panel-muted); border-bottom: 1.7px solid var(--panel-muted);
+        transform: translateY(-2px) rotate(45deg); transition: transform .15s;
+    }
+    .sect[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+    .sect > summary:hover::after { border-color: var(--panel-text); }
+    .sect[open] { padding-bottom: 8px; }
+    .settings h5 {
+        margin: 14px 0 9px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+        text-transform: uppercase; color: var(--panel-muted);
+    }
+    .sect > summary + h5 { margin-top: 2px; }
     .row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 14px; }
     .row > label { flex: 0 0 110px; color: var(--panel-text); }
     .row input[type="range"] { flex: 1; accent-color: var(--accent); min-width: 0; }
@@ -253,12 +269,48 @@
         width: auto; background: var(--panel-field); color: var(--panel-text);
         border: 1px solid var(--panel-line); border-radius: 6px; padding: 5px 8px; font-size: 14px; outline: none;
     }
-    .clock { display: none; text-align: center; margin: 0 0 20px; color: var(--text); text-shadow: 0 2px 8px rgba(0,0,0,0.45); }
+    /* Часы и погода: матовая подложка, чтобы читались на любом фоне (цвет картинки дня странице недоступен) */
+    .clock, .weather { color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 2px 10px rgba(0,0,0,0.45); }
+    .glass { background: rgba(16,12,10,0.42); backdrop-filter: blur(12px) saturate(1.2); -webkit-backdrop-filter: blur(12px) saturate(1.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; }
+    .clock { display: none; text-align: center; margin: 0 auto 20px; width: fit-content; padding: 6px 22px 10px; }
     body.show-clock .clock { display: block; }
-    .clock-time { font-size: 56px; font-weight: 300; line-height: 1.1; letter-spacing: 0.02em; }
-    .clock-date { margin-top: 2px; font-size: 16px; opacity: 0.9; }
+    .clock-time { font-size: clamp(40px, 9vw, 56px); font-weight: 300; line-height: 1.1; letter-spacing: 0.02em; }
+    .clock-date { margin-top: 2px; font-size: 16px; }
     .notes { margin-top: 30px; padding: 12px 14px 14px; color: var(--text); background: rgba(20,14,11,0.55); border-radius: 12px; backdrop-filter: blur(6px); }
     .notes-title { margin-bottom: 6px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.75; }
+    .weather { display: flex; align-items: center; justify-content: center; gap: 10px; width: fit-content; max-width: 100%; margin: 0 auto 22px; padding: 8px 18px; font-size: 14px; }
+    .weather-ico { font-size: 30px; line-height: 1; text-shadow: none; }
+    .weather-temp { font-size: 30px; font-weight: 300; line-height: 1; }
+    .weather-meta { line-height: 1.35; min-width: 0; }
+    .weather-range { font-size: 12px; opacity: 0.85; }
+    /* С часами — одна общая подложка, погода справа от часов */
+    body.show-clock .top-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 26px; width: fit-content; max-width: 100%; margin: 0 auto 20px; padding: 6px 24px 10px; }
+    body:not(.show-clock) .top-row { background: none; border: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; }
+    body.show-clock .top-row .clock, body.show-clock .top-row .weather { margin: 0; padding: 0; background: none; border: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    body.show-clock .top-row .weather:not(.hidden) { padding-left: 26px; border-left: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
+    @media (max-width: 520px) { body.show-clock .top-row .weather:not(.hidden) { padding: 8px 0 0; border-left: none; border-top: 1px solid color-mix(in srgb, var(--text) 25%, transparent); } }   /* на узком экране погода переносится под часы */
+    /* Панель обоев дня: листание назад/вперёд и подпись */
+    .daily-bar {
+        position: fixed; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+        display: flex; align-items: center; gap: 6px; max-width: min(620px, calc(100% - 90px));
+    }
+    .daily-nav {
+        flex: 0 0 auto; width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; color: var(--text);
+        background: rgba(16,12,10,0.42); border: 1px solid rgba(255,255,255,0.12);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        opacity: 0.75; transition: opacity .15s, background .15s;
+    }
+    .daily-nav svg { width: 14px; height: 14px; }
+    .daily-nav:hover:not(:disabled) { opacity: 1; background: rgba(16,12,10,0.62); }
+    .daily-nav:disabled { opacity: 0.25; cursor: default; }
+    .daily-bar.loading .daily-nav { cursor: progress; }
+    .bg-credit {
+        min-width: 0; margin-left: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: 12px; color: var(--text); text-decoration: none; opacity: 0.6; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+        transition: opacity .15s;
+    }
+    .bg-credit:hover { opacity: 1; }
     .notes textarea { width: 100%; min-height: 90px; resize: vertical; border: none; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 15px; line-height: 1.45; }
     .bg-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
     .bg-thumb { position: relative; width: 64px; height: 42px; border-radius: 6px; border: 1px solid var(--panel-line); background-size: cover; background-position: center; }
@@ -432,7 +484,6 @@
         .page { width: min(var(--grid-w), calc(100% - 28px)); padding: calc(env(safe-area-inset-top, 0px) + 14px) 0 calc(96px + env(safe-area-inset-bottom, 0px)); }
         .search-box { max-width: none; margin: 2px 0 20px; }
         .search-input { font-size: 16px; }
-        .clock-time { font-size: 44px; }
         .link-item, .link-icon, .link-name, .link-heading { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .link-item img { -webkit-user-drag: none; }
         .gear-btn { right: calc(8px + env(safe-area-inset-right, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); width: 52px; height: 52px; }
@@ -479,7 +530,10 @@
 <div id="dim"></div>
 
 <div class="page">
-    <div class="clock" id="clock"><div class="clock-time"></div><div class="clock-date"></div></div>
+    <div class="top-row glass">
+        <div class="clock glass" id="clock"><div class="clock-time"></div><div class="clock-date"></div></div>
+        <div class="weather glass hidden" id="weather"></div>
+    </div>
     <div class="search-box">
         <div class="engine" id="engine">
             <button type="button" class="engine-btn" id="engine-btn" title="Поисковая система">
@@ -495,6 +549,11 @@
     <div class="notes hidden" id="notes"><div class="notes-title">Заметки</div><textarea id="notes-text" rows="5" placeholder="Заметки сохраняются автоматически"></textarea></div>
 </div>
 
+<div class="daily-bar hidden" id="daily-bar">
+    <button type="button" class="daily-nav" id="daily-prev" title="Предыдущие обои"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg></button>
+    <button type="button" class="daily-nav" id="daily-next" title="Следующие обои"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 5 5-5 5"/></svg></button>
+    <a class="bg-credit" id="bg-credit" target="_blank" rel="noopener noreferrer"></a>
+</div>
 <div class="scrim" id="scrim"></div>
 <!-- Шестерёнка -->
 <button class="gear-btn" id="gear-btn" title="Настройки">
@@ -512,192 +571,240 @@
             <option value="en">English</option>
         </select>
     </div>
-    <h4>Фон</h4>
-    <div class="row">
-        <label>Тип</label>
-        <select id="bg-mode" style="flex:1">
-            <option value="image">Картинка</option>
-            <option value="gradient">Градиент</option>
-        </select>
-    </div>
-
-    <div id="image-controls">
-        <div class="btn-row">
-            <button class="btn primary" id="bg-upload">Загрузить картинку</button>
-            <button class="btn" id="bg-clear">Убрать</button>
-        </div>
-        <input class="text-input" id="bg-url" placeholder="или вставьте ссылку на картинку и нажмите Enter" style="margin-bottom:10px">
+    <details class="sect" data-sect="bg" open>
+        <summary>Фон</summary>
         <div class="row">
-            <label>Смена фона</label>
-            <select id="bg-rotate" style="flex:1">
-                <option value="off">Выключена</option><option value="open">При каждом открытии</option>
-                <option value="hour">Каждый час</option><option value="day">Каждый день</option>
+            <label>Тип</label>
+            <select id="bg-mode" style="flex:1">
+                <option value="image">Картинка</option>
+                <option value="gradient">Градиент</option>
+                <option value="daily">Обои дня</option>
             </select>
         </div>
-        <div class="btn-row"><button class="btn" id="bg-add">Добавить в слайдшоу</button></div>
-        <div class="bg-thumbs" id="bg-thumbs"></div>
+
+        <div id="image-controls">
+            <div class="btn-row">
+                <button class="btn primary" id="bg-upload">Загрузить картинку</button>
+                <button class="btn" id="bg-clear">Убрать</button>
+            </div>
+            <input class="text-input" id="bg-url" placeholder="или вставьте ссылку на картинку и нажмите Enter" style="margin-bottom:10px">
+            <div class="row">
+                <label>Смена фона</label>
+                <select id="bg-rotate" style="flex:1">
+                    <option value="off">Выключена</option><option value="open">При каждом открытии</option>
+                    <option value="hour">Каждый час</option><option value="day">Каждый день</option>
+                </select>
+            </div>
+            <div class="btn-row"><button class="btn" id="bg-add">Добавить в слайдшоу</button></div>
+            <div class="bg-thumbs" id="bg-thumbs"></div>
+        </div>
+
+        <div id="gradient-controls" class="hidden">
+            <div class="row"><label>Цвет 1</label><input type="color" id="gradient-color1"></div>
+            <div class="row"><label>Цвет 2</label><input type="color" id="gradient-color2"></div>
+            <div class="row">
+                <label>Тип</label>
+                <select id="gradient-type">
+                    <option value="linear">Линейный</option>
+                    <option value="radial">Радиальный</option>
+                </select>
+            </div>
+            <div class="row"><label>Угол</label><input type="number" id="gradient-angle" min="0" max="360"><span>°</span></div>
+            <div class="gradient-presets" id="presets"></div>
+        </div>
+
+        <div id="daily-controls" class="hidden">
+            <div class="row">
+                <label>Источник</label>
+                <select id="daily-source" style="flex:1">
+                    <option value="bing">Bing</option>
+                    <option value="wiki">Wikimedia Commons</option>
+                </select>
+            </div>
+            <div class="hint">Картинка меняется раз в день. Стрелками в левом нижнем углу можно листать прошлые обои.</div>
+        </div>
+
         <div class="row">
             <label>Затемнение</label>
             <input type="range" id="dim-range" min="0" max="80" step="1">
             <span class="val" id="dim-val"></span>
         </div>
-    </div>
-
-    <div id="gradient-controls" class="hidden">
-        <div class="row"><label>Цвет 1</label><input type="color" id="gradient-color1"></div>
-        <div class="row"><label>Цвет 2</label><input type="color" id="gradient-color2"></div>
         <div class="row">
-            <label>Тип</label>
-            <select id="gradient-type">
-                <option value="linear">Линейный</option>
-                <option value="radial">Радиальный</option>
+            <label>Размытие</label>
+            <input type="range" id="blur-range" min="0" max="30" step="1">
+            <span class="val" id="blur-val"></span>
+        </div>
+        <div class="row">
+            <label>Яркость</label>
+            <input type="range" id="bright-range" min="30" max="150" step="1">
+            <span class="val" id="bright-val"></span>
+        </div>
+
+        <h5>Ночью</h5>
+        <label class="check"><input type="checkbox" id="auto-dim"> Затемнять фон ночью</label>
+        <label class="check"><input type="checkbox" id="night-bg"> Отдельный фон ночью</label>
+        <div id="night-controls" class="hidden">
+            <div class="btn-row">
+                <button class="btn" id="night-upload">Ночная картинка</button>
+                <button class="btn" id="night-clear">Убрать</button>
+            </div>
+            <div class="bg-thumbs" id="night-thumb"></div>
+            <div class="row"><label>Цвет 1</label><input type="color" id="night-c1"></div>
+            <div class="row"><label>Цвет 2</label><input type="color" id="night-c2"></div>
+            <div class="hint">Без картинки ночью показывается этот градиент. Ночь — от заката до рассвета, если включена погода, иначе с 21:00 до 6:00.</div>
+        </div>
+    </details>
+    <details class="sect" data-sect="widgets">
+        <summary>Виджеты</summary>
+        <label class="check"><input type="checkbox" id="show-search"> Показывать строку поиска</label>
+        <label class="check"><input type="checkbox" id="quick-search"> Быстрый поиск: печатайте прямо на странице</label>
+        <label class="check"><input type="checkbox" id="show-clock"> Часы и дата</label>
+        <label class="check"><input type="checkbox" id="show-weather"> Погода</label>
+        <div id="weather-controls" class="hidden">
+            <div class="row"><label>Город</label><input class="text-input" id="weather-city" placeholder="пусто — по геолокации" style="flex:1"></div>
+            <div class="row">
+                <label>Единицы</label>
+                <select id="weather-units" style="flex:1"><option value="c">°C, м/с</option><option value="f">°F, mph</option></select>
+            </div>
+            <div class="hint">Данные: Open-Meteo.com</div>
+        </div>
+        <label class="check"><input type="checkbox" id="show-notes"> Заметки</label>
+    </details>
+    <details class="sect" data-sect="tiles">
+        <summary>Ярлыки</summary>
+        <h5>Сетка</h5>
+        <div class="row">
+            <label>Ярлыков в ряду</label>
+            <input type="range" id="cols-range" min="2" max="12" step="1">
+            <span class="val" id="cols-val"></span>
+        </div>
+        <div class="row">
+            <label>Между строками</label>
+            <input type="range" id="rowgap-range" min="0" max="80" step="1">
+            <span class="val" id="rowgap-val"></span>
+        </div>
+        <div class="row" id="row-gridw">
+            <label>Ширина сетки</label>
+            <input type="range" id="gridw-range" min="400" max="1800" step="10">
+            <span class="val" id="gridw-val"></span>
+        </div>
+        <h5>Размер</h5>
+        <div class="row">
+            <label>Ширина ярлыка</label>
+            <input type="range" id="tile-w-range" min="60" max="420" step="2">
+            <span class="val" id="tile-w-val"></span>
+        </div>
+        <div class="row">
+            <label>Высота ярлыка</label>
+            <input type="range" id="tile-h-range" min="40" max="320" step="2">
+            <span class="val" id="tile-h-val"></span>
+        </div>
+        <div class="btn-row" id="ratio-btns">
+            <button type="button" class="btn" data-ratio="1">Квадрат</button>
+            <button type="button" class="btn" data-ratio="1.4">4:3</button>
+            <button type="button" class="btn" data-ratio="1.8">Широкий</button>
+        </div>
+        <h5>Вид</h5>
+        <div class="row">
+            <label>Стиль ярлыка</label>
+            <select id="tile-style" style="flex:1">
+                <option value="card">Карточка (цвет по иконке)</option>
+                <option value="dark">Тёмная плитка</option>
             </select>
         </div>
-        <div class="row"><label>Угол</label><input type="number" id="gradient-angle" min="0" max="360"><span>°</span></div>
-        <div class="gradient-presets" id="presets"></div>
-    </div>
-
-    <div class="row">
-        <label>Размытие</label>
-        <input type="range" id="blur-range" min="0" max="30" step="1">
-        <span class="val" id="blur-val"></span>
-    </div>
-    <div class="row">
-        <label>Яркость</label>
-        <input type="range" id="bright-range" min="30" max="150" step="1">
-        <span class="val" id="bright-val"></span>
-    </div>
-
-    <h4>Текст и плитки</h4>
-    <div class="row"><label>Цвет шрифта</label><input type="color" id="text-color"></div>
-    <div class="swatches" id="text-swatches"></div>
-    <div class="row">
-        <label>Прозрачность плиток</label>
-        <input type="range" id="tile-range" min="20" max="100" step="1">
-        <span class="val" id="tile-val"></span>
-    </div>
-    <h4>Сетка ярлыков</h4>
-    <div class="row">
-        <label>Ярлыков в ряду</label>
-        <input type="range" id="cols-range" min="2" max="12" step="1">
-        <span class="val" id="cols-val"></span>
-    </div>
-    <div class="row">
-        <label>Между строками</label>
-        <input type="range" id="rowgap-range" min="0" max="80" step="1">
-        <span class="val" id="rowgap-val"></span>
-    </div>
-    <div class="row" id="row-gridw">
-        <label>Ширина сетки</label>
-        <input type="range" id="gridw-range" min="400" max="1800" step="10">
-        <span class="val" id="gridw-val"></span>
-    </div>
-    <div class="row">
-        <label>Ширина ярлыка</label>
-        <input type="range" id="tile-w-range" min="60" max="420" step="2">
-        <span class="val" id="tile-w-val"></span>
-    </div>
-    <div class="row">
-        <label>Высота ярлыка</label>
-        <input type="range" id="tile-h-range" min="40" max="320" step="2">
-        <span class="val" id="tile-h-val"></span>
-    </div>
-    <div class="btn-row" id="ratio-btns">
-        <button type="button" class="btn" data-ratio="1">Квадрат</button>
-        <button type="button" class="btn" data-ratio="1.4">4:3</button>
-        <button type="button" class="btn" data-ratio="1.8">Широкий</button>
-    </div>
-    <div class="row">
-        <label>Стиль ярлыка</label>
-        <select id="tile-style" style="flex:1">
-            <option value="card">Карточка (цвет по иконке)</option>
-            <option value="dark">Тёмная плитка</option>
-        </select>
-    </div>
-    <label class="check"><input type="checkbox" id="icon-plate"> Белая подложка под иконкой</label>
-    <div class="row">
-        <label>Название</label>
-        <select id="name-mode" style="flex:1">
-            <option value="auto">Авто (внутри у широких)</option>
-            <option value="inside">Внутри ярлыка</option>
-            <option value="below">Под ярлыком</option>
-        </select>
-    </div>
-    <div class="row">
-        <label>Форма ярлыков</label>
-        <div class="shape-btns" id="shape-btns">
-            <button type="button" class="shape-btn" data-r="0" title="Квадрат"><i style="border-radius:0"></i></button>
-            <button type="button" class="shape-btn" data-r="4" title="Слегка скруглённый"><i style="border-radius:4px"></i></button>
-            <button type="button" class="shape-btn" data-r="13" title="Мягкий"><i style="border-radius:8px"></i></button>
-            <button type="button" class="shape-btn" data-r="50" title="Круг"><i style="border-radius:50%"></i></button>
-        </div>
-    </div>
-    <div class="row">
-        <label>Скругление</label>
-        <input type="range" id="radius-range" min="0" max="50" step="1">
-        <span class="val" id="radius-val"></span>
-    </div>
-    <div class="btn-row"><button class="btn" id="refresh-icons">Обновить иконки сайтов</button></div>
-    <label class="check"><input type="checkbox" id="show-search"> Показывать строку поиска</label>
-    <label class="check"><input type="checkbox" id="quick-search"> Быстрый поиск: печатайте прямо на странице</label>
-
-    <h4>Страница</h4>
-    <label class="check"><input type="checkbox" id="show-clock"> Часы и дата</label>
-    <label class="check"><input type="checkbox" id="show-notes"> Заметки</label>
-    <label class="check"><input type="checkbox" id="auto-dim"> Затемнять фон ночью</label>
-
-    <h4>Закладки</h4>
-    <div class="btn-row">
-        <button class="btn" id="bm-import-btn"><svg viewBox="0 0 24 24"><path d="M7 4.5h10A1.5 1.5 0 0 1 18.5 6v14l-6.5-4.5L5.5 20V6A1.5 1.5 0 0 1 7 4.5z"/></svg>Импорт закладок</button>
-        <button class="btn" id="new-heading-btn"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h8"/></svg>Новый заголовок</button>
-        <button class="btn" id="new-folder-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M12 11.5v5M9.5 14h5"/></svg>Новая папка</button>
-    </div>
-    <div class="hint">Chrome и Edge: Диспетчер закладок → ⋮ → «Экспорт закладок». Firefox: Закладки → Управление закладками → Импорт и резервные копии → «Экспорт закладок в HTML». Затем выберите сохранённый .html файл.</div>
-
-    <h4>Окно настроек</h4>
-    <label class="check"><input type="checkbox" id="panel-grad"> Градиентный фон окна</label>
-    <div id="panel-grad-controls" class="hidden">
-        <div class="row"><label>Цвет 1</label><input type="color" id="panel-c1"></div>
-        <div class="row"><label>Цвет 2</label><input type="color" id="panel-c2"></div>
+        <label class="check"><input type="checkbox" id="icon-plate"> Белая подложка под иконкой</label>
         <div class="row">
-            <label>Угол</label>
-            <input type="range" id="panel-angle" min="0" max="360" step="1">
-            <span class="val" id="panel-angle-val"></span>
+            <label>Название</label>
+            <select id="name-mode" style="flex:1">
+                <option value="auto">Авто (внутри у широких)</option>
+                <option value="inside">Внутри ярлыка</option>
+                <option value="below">Под ярлыком</option>
+            </select>
         </div>
-    </div>
-
-    <h4>Синхронизация (GitHub Gist)</h4>
-    <div class="row"><label>Токен GitHub</label><input type="password" class="text-input" id="sync-token" placeholder="ghp_… (право gist)" autocomplete="off" style="flex:1"></div>
-    <div class="row"><label>Пароль шифрования</label><input type="password" class="text-input" id="sync-pass" placeholder="рекомендуется" autocomplete="new-password" style="flex:1"></div>
-    <div class="row"><label>Что синхронизировать</label>
-        <select id="sync-scope" style="flex:1">
-            <option value="links">Ярлыки и заметки</option>
-            <option value="look">+ оформление</option>
-            <option value="all">+ фон и слайдшоу</option>
-        </select>
-    </div>
-    <label class="check"><input type="checkbox" id="sync-remember"> Запомнить токен и пароль на этом устройстве</label>
-    <div class="btn-row">
-        <button class="btn" id="sync-push">Отправить в Gist</button>
-        <button class="btn" id="sync-pull">Загрузить из Gist</button>
-    </div>
-    <div class="hint" id="sync-status"></div>
-    <div class="hint">Данные попадают в ваш секретный Gist на GitHub. Без пароля содержимое может прочитать любой, у кого есть ссылка, поэтому пароль лучше задать. Токен создаётся в GitHub: Settings → Developer settings → Personal access tokens, с правом gist. Пароль восстановить нельзя.</div>
-
-    <h4>Данные</h4>
-    <div class="btn-row">
-        <button class="btn" id="export-btn" title="Сохранить ссылки, настройки, фон и иконки в .zip"><svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Экспорт</button>
-        <button class="btn" id="import-btn" title="Загрузить .zip (или старый .json)"><svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Импорт</button>
-        <button class="btn" id="open-file-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>Открыть файл</button>
-    </div>
-    <div class="btn-row">
-        <button class="btn" id="undo-btn" title="Ctrl+Z">Отменить</button>
-        <button class="btn" id="redo-btn" title="Ctrl+Shift+Z">Повторить</button>
-    </div>
-    <div class="btn-row">
-        <button class="btn" id="reset-btn">Сбросить оформление</button>
-    </div>
-    <div class="hint">Ярлыки можно перетаскивать: между плитками — менять порядок, на папку — положить внутрь. Правая кнопка мыши — изменить, крестик при наведении — удалить.</div>
+        <div class="row">
+            <label>Форма ярлыков</label>
+            <div class="shape-btns" id="shape-btns">
+                <button type="button" class="shape-btn" data-r="0" title="Квадрат"><i style="border-radius:0"></i></button>
+                <button type="button" class="shape-btn" data-r="4" title="Слегка скруглённый"><i style="border-radius:4px"></i></button>
+                <button type="button" class="shape-btn" data-r="13" title="Мягкий"><i style="border-radius:8px"></i></button>
+                <button type="button" class="shape-btn" data-r="50" title="Круг"><i style="border-radius:50%"></i></button>
+            </div>
+        </div>
+        <div class="row">
+            <label>Скругление</label>
+            <input type="range" id="radius-range" min="0" max="50" step="1">
+            <span class="val" id="radius-val"></span>
+        </div>
+        <div class="row">
+            <label>Прозрачность плиток</label>
+            <input type="range" id="tile-range" min="20" max="100" step="1">
+            <span class="val" id="tile-val"></span>
+        </div>
+        <div class="btn-row"><button class="btn" id="refresh-icons">Обновить иконки сайтов</button></div>
+    </details>
+    <details class="sect" data-sect="look">
+        <summary>Оформление</summary>
+        <h5>Текст</h5>
+        <div class="row"><label>Цвет шрифта</label><input type="color" id="text-color"></div>
+        <div class="swatches" id="text-swatches"></div>
+        <h5>Окно настроек</h5>
+        <label class="check"><input type="checkbox" id="panel-grad"> Градиентный фон окна</label>
+        <div id="panel-grad-controls" class="hidden">
+            <div class="row"><label>Цвет 1</label><input type="color" id="panel-c1"></div>
+            <div class="row"><label>Цвет 2</label><input type="color" id="panel-c2"></div>
+            <div class="row">
+                <label>Угол</label>
+                <input type="range" id="panel-angle" min="0" max="360" step="1">
+                <span class="val" id="panel-angle-val"></span>
+            </div>
+        </div>
+    </details>
+    <details class="sect" data-sect="bookmarks">
+        <summary>Закладки и папки</summary>
+        <div class="btn-row">
+            <button class="btn" id="bm-import-btn"><svg viewBox="0 0 24 24"><path d="M7 4.5h10A1.5 1.5 0 0 1 18.5 6v14l-6.5-4.5L5.5 20V6A1.5 1.5 0 0 1 7 4.5z"/></svg>Импорт закладок</button>
+            <button class="btn" id="new-heading-btn"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h8"/></svg>Новый заголовок</button>
+            <button class="btn" id="new-folder-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/><path d="M12 11.5v5M9.5 14h5"/></svg>Новая папка</button>
+        </div>
+        <div class="hint">Chrome и Edge: Диспетчер закладок → ⋮ → «Экспорт закладок». Firefox: Закладки → Управление закладками → Импорт и резервные копии → «Экспорт закладок в HTML». Затем выберите сохранённый .html файл.</div>
+        <div class="hint">Ярлыки можно перетаскивать: между плитками — менять порядок, на папку — положить внутрь. Правая кнопка мыши — изменить, крестик при наведении — удалить.</div>
+    </details>
+    <details class="sect" data-sect="sync">
+        <summary>Синхронизация (GitHub Gist)</summary>
+        <div class="row"><label>Токен GitHub</label><input type="password" class="text-input" id="sync-token" placeholder="ghp_… (право gist)" autocomplete="off" style="flex:1"></div>
+        <div class="row"><label>Пароль шифрования</label><input type="password" class="text-input" id="sync-pass" placeholder="рекомендуется" autocomplete="new-password" style="flex:1"></div>
+        <div class="row"><label>Что синхронизировать</label>
+            <select id="sync-scope" style="flex:1">
+                <option value="links">Ярлыки и заметки</option>
+                <option value="look">+ оформление</option>
+                <option value="all">+ фон и слайдшоу</option>
+            </select>
+        </div>
+        <label class="check"><input type="checkbox" id="sync-remember"> Запомнить токен и пароль на этом устройстве</label>
+        <label class="check"><input type="checkbox" id="sync-auto"> Автосинхронизация</label>
+        <div class="hint">Отправляет изменения через 20 секунд после правки и проверяет Gist при открытии страницы. Токен и пароль при этом запоминаются.</div>
+        <div class="btn-row">
+            <button class="btn" id="sync-push">Отправить в Gist</button>
+            <button class="btn" id="sync-pull">Загрузить из Gist</button>
+        </div>
+        <div class="hint" id="sync-status"></div>
+        <div class="hint">Данные попадают в ваш секретный Gist на GitHub. Без пароля содержимое может прочитать любой, у кого есть ссылка, поэтому пароль лучше задать. Токен создаётся в GitHub: Settings → Developer settings → Personal access tokens, с правом gist. Пароль восстановить нельзя.</div>
+    </details>
+    <details class="sect" data-sect="data">
+        <summary>Данные</summary>
+        <div class="btn-row">
+            <button class="btn" id="export-btn" title="Сохранить ссылки, настройки, фон и иконки в .zip"><svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Экспорт</button>
+            <button class="btn" id="import-btn" title="Загрузить .zip (или старый .json)"><svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Импорт</button>
+            <button class="btn" id="open-file-btn"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18z"/></svg>Открыть файл</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn" id="undo-btn" title="Ctrl+Z">Отменить</button>
+            <button class="btn" id="redo-btn" title="Ctrl+Shift+Z">Повторить</button>
+        </div>
+        <div class="btn-row">
+            <button class="btn" id="reset-btn">Сбросить оформление</button>
+        </div>
+    </details>
 </div>
 
 <!-- Редактор ссылки / папки -->
@@ -800,7 +907,7 @@
 <script>
 /* ===================== Хранилище (расширение: browser.storage.local, страница: localStorage) ===================== */
 const Store = (function () {
-    const KEYS = ['quickLinks', 'homeSettings', 'customGradient', 'savedFavicons', 'homeNotes', 'syncCfg'];
+    const KEYS = ['quickLinks', 'homeSettings', 'customGradient', 'savedFavicons', 'homeNotes', 'syncCfg', 'weatherCache', 'dailyWall'];
     const cache = {};
     let ext = (typeof browser !== 'undefined' && browser.storage && browser.storage.local) ? browser : null;
     const api = { onError: null };
@@ -880,7 +987,15 @@ function main() {
         panelColor1: '#3a2216',
         panelColor2: '#7a3a1a',
         panelAngle: 135,
-        showSearch: false
+        showSearch: false,
+        dailySource: 'bing',
+        nightBgOn: false,
+        nightBg: '',
+        nightColor1: '#0b1026',
+        nightColor2: '#2b1b4a',
+        showWeather: false,
+        weatherCity: '',
+        weatherUnits: 'c'
     };
     if (COARSE) Object.assign(DEFAULTS, { cols: 4, tileW: 72, tileH: 72, rowGap: 12, tileStyle: 'dark', nameMode: 'below', tileRadius: 22, showSearch: true });
     const DEFAULT_GRADIENT = { color1: '#3a1c0f', color2: '#c2461a', angle: 45, type: 'linear' };
@@ -888,6 +1003,7 @@ function main() {
     let settings = Object.assign({}, DEFAULTS, getStorage('homeSettings', {}));
     if (settings.tileStyle === 'fill') settings.tileStyle = 'card';   // стиль «Иконка на весь ярлык» убран
     let gradient = Object.assign({}, DEFAULT_GRADIENT, getStorage('customGradient')[0] || {});
+    let onDataChange = () => {};   // 'links' | 'settings' — подключается синхронизацией
 
     /* ===================== Язык / Language ===================== */
     const I18N_EN = {
@@ -905,10 +1021,8 @@ function main() {
  "Угол": "Angle",
  "Размытие": "Blur",
  "Яркость": "Brightness",
- "Текст и плитки": "Text and tiles",
  "Цвет шрифта": "Font color",
  "Прозрачность плиток": "Tile opacity",
- "Сетка ярлыков": "Tile grid",
  "Ярлыков в ряду": "Tiles per row",
  "Между строками": "Row spacing",
  "Ширина сетки": "Grid width",
@@ -952,7 +1066,6 @@ function main() {
  "Каждый час": "Every hour",
  "Каждый день": "Every day",
  "Добавить в слайдшоу": "Add to slideshow",
- "Страница": "Page",
  "Часы и дата": "Clock and date",
  "Заметки": "Notes",
  "Затемнять фон ночью": "Dim the background at night",
@@ -1060,7 +1173,61 @@ function main() {
  "Импортировать данные? Текущие настройки будут перезаписаны.": "Import data? Current settings will be overwritten.",
  "Не удалось сохранить: хранилище браузера переполнено.": "Could not save: browser storage is full.",
  "Ошибка при импорте: {m}": "Import error: {m}",
- "Ошибка чтения файла: {m}": "Could not read the file: {m}"
+ "Ошибка чтения файла: {m}": "Could not read the file: {m}",
+ "Обои дня": "Picture of the day",
+ "Источник": "Source",
+ "Картинка меняется раз в день. Стрелками в левом нижнем углу можно листать прошлые обои.": "The picture changes daily. Use the arrows in the bottom-left corner to browse past pictures.",
+ "Не удалось загрузить обои дня": "Could not load the picture of the day",
+ "Предыдущие обои": "Previous picture",
+ "Следующие обои": "Next picture",
+ "Больше обоев нет": "No more pictures",
+ "Картинка всего {s}px — на плитке она будет размытой. Лучше взять от 128px": "The image is only {s}px — it will look blurry on the tile. Use 128px or larger",
+ "Нажмите, чтобы разрешить передачу местоположения для погоды": "Click to allow sending your location for the weather",
+ "Без разрешения на передачу местоположения погода не работает": "The weather needs permission to send your location",
+ "Нет разрешения на передачу данных для синхронизации": "No permission to send data for sync",
+ "Отдельный фон ночью": "Separate background at night",
+ "Ночная картинка": "Night image",
+ "Без картинки ночью показывается этот градиент. Ночь — от заката до рассвета, если включена погода, иначе с 21:00 до 6:00.": "Without an image this gradient is shown at night. Night is from sunset to sunrise when the weather is on, otherwise from 21:00 to 6:00.",
+ "Погода": "Weather",
+ "Город": "City",
+ "пусто — по геолокации": "empty — use geolocation",
+ "Единицы": "Units",
+ "°C, м/с": "°C, m/s",
+ "Данные: Open-Meteo.com": "Data: Open-Meteo.com",
+ "Загружаю погоду…": "Loading weather…",
+ "Город не найден: {c}": "City not found: {c}",
+ "Нет доступа к геолокации — укажите город в настройках": "No access to geolocation — set a city in the settings",
+ "Погода недоступна: {m}": "Weather unavailable: {m}",
+ "Ощущается как {v}, ветер {w}": "Feels like {v}, wind {w}",
+ "м/с": "m/s",
+ "Обновлено в {t}": "Updated at {t}",
+ "Ясно": "Clear",
+ "Малооблачно": "Mostly clear",
+ "Переменная облачность": "Partly cloudy",
+ "Пасмурно": "Overcast",
+ "Туман": "Fog",
+ "Морось": "Drizzle",
+ "Ледяная морось": "Freezing drizzle",
+ "Дождь": "Rain",
+ "Ледяной дождь": "Freezing rain",
+ "Снег": "Snow",
+ "Снежная крупа": "Snow grains",
+ "Ливень": "Showers",
+ "Снегопад": "Snow showers",
+ "Гроза": "Thunderstorm",
+ "Гроза с градом": "Thunderstorm with hail",
+ "Автосинхронизация": "Auto-sync",
+ "Отправляет изменения через 20 секунд после правки и проверяет Gist при открытии страницы. Токен и пароль при этом запоминаются.": "Pushes changes 20 seconds after an edit and checks the Gist when the page opens. The token and password are remembered.",
+ "Виджеты": "Widgets",
+ "Ярлыки": "Tiles",
+ "Оформление": "Appearance",
+ "Закладки и папки": "Bookmarks and folders",
+ "Ночью": "At night",
+ "Сетка": "Grid",
+ "Размер": "Size",
+ "Вид": "Look",
+ "В Gist есть более новые данные от {t}. Загрузить их?\n\n«Отмена» — оставить данные этого устройства и отправить их в Gist.": "The Gist has newer data from {t}. Load it?\n\n“Cancel” keeps this device's data and pushes it to the Gist.",
+ "Загружены изменения из Gist": "Changes loaded from the Gist"
 };
     let LANG = 'ru';
     const CYR = /[А-Яа-яЁё]/;
@@ -1112,8 +1279,9 @@ function main() {
         if (!setStorage('homeSettings', settings)) {
             alert(t('Не удалось сохранить настройки: хранилище браузера переполнено. Попробуйте картинку меньшего размера.'));
         }
+        onDataChange('settings');
     }
-    function saveGradient() { setStorage('customGradient', [gradient]); }
+    function saveGradient() { setStorage('customGradient', [gradient]); onDataChange('settings'); }
 
     /* ===================== Фавиконы ===================== */
     function getFaviconFromStorage(domain) {
@@ -1132,14 +1300,10 @@ function main() {
             const domain = new URL(url).hostname;
             const cached = getFaviconFromStorage(domain);
             if (cached) return cached;
-            const response = await fetch('https://www.google.com/s2/favicons?domain=' + domain + '&sz=256');
-            if (!response.ok) throw new Error('favicon');
-            const blob = await response.blob();
-            return await new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onloadend = () => { saveFaviconToStorage(domain, reader.result); resolve(reader.result); };
-                reader.readAsDataURL(blob);
-            });
+            const data = await fetchFaviconData(domain, 256);
+            if (!data) throw new Error('favicon');
+            saveFaviconToStorage(domain, data);
+            return data;
         } catch { return FALLBACK_ICON; }
     }
 
@@ -1227,15 +1391,35 @@ function main() {
         return pool[idx];
     }
     function effectiveDim() {
-        const h = new Date().getHours();
-        return Math.min(90, settings.dim + (settings.autoDim && (h >= 21 || h < 6) ? 25 : 0));
+        return Math.min(90, settings.dim + (settings.autoDim && isNight() ? 25 : 0));
+    }
+    const localDay = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const minutesOf = iso => { const m = /T(\d\d):(\d\d)/.exec(iso || ''); return m ? +m[1] * 60 + +m[2] : null; };
+    // Ночь: от заката до рассвета по последним данным погоды (не старше недели), иначе с 21:00 до 6:00
+    function isNight() {
+        const now = new Date(), cur = now.getHours() * 60 + now.getMinutes();
+        const d = weatherCache && weatherCache.data && weatherCache.data.daily;
+        if (d && Date.now() - weatherCache.at < 7 * 86400000) {
+            const rise = minutesOf(d.sunrise && d.sunrise[0]), set = minutesOf(d.sunset && d.sunset[0]);
+            if (rise !== null && set !== null && rise < set) return cur < rise || cur >= set;
+        }
+        return cur >= 21 * 60 || cur < 6 * 60;
+    }
+    async function fetchJson(url) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 10000);
+        try {
+            const r = await fetch(url, { signal: ctrl.signal });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return await r.json();
+        } finally { clearTimeout(timer); }
     }
     const clockEl = document.getElementById('clock');
     const notesBox = document.getElementById('notes');
     const notesText = document.getElementById('notes-text');
     notesText.value = getStorage('homeNotes', '');
     let notesTimer;
-    notesText.addEventListener('input', () => { clearTimeout(notesTimer); notesTimer = setTimeout(() => setStorage('homeNotes', notesText.value), 400); });
+    notesText.addEventListener('input', () => { clearTimeout(notesTimer); notesTimer = setTimeout(() => { setStorage('homeNotes', notesText.value); onDataChange('links'); }, 400); });
     function updateClock() {
         document.body.classList.toggle('show-clock', !!settings.showClock);
         if (!settings.showClock) return;
@@ -1243,6 +1427,238 @@ function main() {
         clockEl.querySelector('.clock-time').textContent = now.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
         clockEl.querySelector('.clock-date').textContent = now.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' });
     }
+
+    /* ---------- Согласие на передачу данных (расширение, Firefox 140+) ----------
+       Необязательные типы из manifest.json: locationInfo — погода, authenticationInfo — синхронизация.
+       Пользователь разрешает их по клику или в about:addons → «Разрешения и данные». На обычной странице всё разрешено. */
+    const dataConsent = (function () {
+        const perms = typeof browser !== 'undefined' && browser.permissions ? browser.permissions : null;
+        let supported = false, granted = [];
+        async function refresh() {
+            if (!perms) return;
+            try {
+                const all = await perms.getAll();
+                supported = Array.isArray(all.data_collection);
+                granted = all.data_collection || [];
+            } catch (e) { supported = false; }
+        }
+        const ready = refresh();
+        if (perms && perms.onAdded) { perms.onAdded.addListener(refresh); perms.onRemoved.addListener(refresh); }
+        return {
+            ready,
+            has: type => !supported || granted.includes(type),
+            // Вызывать прямо в обработчике клика, до любого await: Firefox принимает запрос только от действия пользователя
+            ask(type) {
+                if (!perms || (supported && granted.includes(type))) return Promise.resolve(true);
+                return perms.request({ data_collection: [type] }).then(ok => {
+                    if (ok && !granted.includes(type)) granted = granted.concat(type);
+                    return ok;
+                }, () => !supported);
+            }
+        };
+    })();
+
+    /* ---------- Погода (Open-Meteo) ---------- */
+    const weatherEl = document.getElementById('weather');
+    let weatherCache = getStorage('weatherCache', null), weatherError = '', weatherTried = 0, weatherBusy = false;
+    const weatherCity = () => String(settings.weatherCity || '').trim();
+    const weatherMatches = () => !!(weatherCache && weatherCache.data && weatherCache.units === settings.weatherUnits && weatherCache.city === weatherCity());
+    function weatherInfo(code, day) {
+        if (code === 0) return [day ? '☀️' : '🌙', 'Ясно'];
+        if (code === 1) return [day ? '🌤️' : '🌙', 'Малооблачно'];
+        if (code === 2) return ['⛅', 'Переменная облачность'];
+        if (code === 3) return ['☁️', 'Пасмурно'];
+        if (code === 45 || code === 48) return ['🌫️', 'Туман'];
+        if (code >= 51 && code <= 55) return ['🌦️', 'Морось'];
+        if (code === 56 || code === 57) return ['🌧️', 'Ледяная морось'];
+        if (code >= 61 && code <= 65) return ['🌧️', 'Дождь'];
+        if (code === 66 || code === 67) return ['🌧️', 'Ледяной дождь'];
+        if (code >= 71 && code <= 75) return ['🌨️', 'Снег'];
+        if (code === 77) return ['🌨️', 'Снежная крупа'];
+        if (code >= 80 && code <= 82) return ['🌧️', 'Ливень'];
+        if (code === 85 || code === 86) return ['🌨️', 'Снегопад'];
+        if (code === 95) return ['⛈️', 'Гроза'];
+        if (code === 96 || code === 99) return ['⛈️', 'Гроза с градом'];
+        return ['🌡️', ''];
+    }
+    const userError = msg => Object.assign(new Error(msg), { user: true });
+    function weatherLocate() {
+        const city = weatherCity();
+        const known = weatherCache && weatherCache.city === city && weatherCache.lat != null;
+        if (city) {
+            if (known) return Promise.resolve({ lat: weatherCache.lat, lon: weatherCache.lon, name: weatherCache.name, city });
+            return fetchJson('https://geocoding-api.open-meteo.com/v1/search?count=1&language=' + LANG + '&name=' + encodeURIComponent(city)).then(r => {
+                const g = r.results && r.results[0];
+                if (!g) throw userError(t('Город не найден: {c}', { c: city }));
+                return { lat: g.latitude, lon: g.longitude, name: g.name, city };
+            });
+        }
+        if (known && Date.now() - weatherCache.at < 6 * 3600000) return Promise.resolve({ lat: weatherCache.lat, lon: weatherCache.lon, name: '', city });
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) { reject(userError(t('Нет доступа к геолокации — укажите город в настройках'))); return; }
+            navigator.geolocation.getCurrentPosition(
+                p => resolve({ lat: +p.coords.latitude.toFixed(3), lon: +p.coords.longitude.toFixed(3), name: '', city }),
+                () => reject(userError(t('Нет доступа к геолокации — укажите город в настройках'))),
+                { timeout: 15000, maximumAge: 3600000 });
+        });
+    }
+    async function refreshWeather() {
+        if (weatherBusy) return;
+        weatherBusy = true; weatherTried = Date.now();
+        try {
+            await dataConsent.ready;
+            if (!dataConsent.has('locationInfo')) throw userError(t('Нажмите, чтобы разрешить передачу местоположения для погоды'));
+            const loc = await weatherLocate();
+            const f = settings.weatherUnits === 'f';
+            const data = await fetchJson('https://api.open-meteo.com/v1/forecast?latitude=' + loc.lat + '&longitude=' + loc.lon +
+                '&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m' +
+                '&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1' +
+                (f ? '&temperature_unit=fahrenheit&wind_speed_unit=mph' : '&wind_speed_unit=ms'));
+            weatherCache = Object.assign({}, loc, { units: settings.weatherUnits, at: Date.now(), data });
+            setStorage('weatherCache', weatherCache);
+            weatherError = '';
+        } catch (e) {
+            weatherError = e.user ? e.message : t('Погода недоступна: {m}', { m: e.name === 'AbortError' ? 'timeout' : e.message });
+        }
+        weatherBusy = false;
+        applyAppearance();
+    }
+    weatherEl.addEventListener('click', () => {
+        if (dataConsent.has('locationInfo')) return;
+        dataConsent.ask('locationInfo').then(ok => { if (ok) { weatherTried = 0; weatherError = ''; applyAppearance(); } });
+    });
+    function updateWeather() {
+        weatherEl.classList.toggle('hidden', !settings.showWeather);
+        if (!settings.showWeather) return;
+        const stale = !weatherMatches() || Date.now() - weatherCache.at > 30 * 60000;
+        if (stale && Date.now() - weatherTried > 5 * 60000) refreshWeather();
+        weatherEl.replaceChildren();
+        if (!weatherMatches()) {
+            weatherEl.textContent = weatherError || t('Загружаю погоду…');
+            weatherEl.title = '';
+            return;
+        }
+        const c = weatherCache.data.current, d = weatherCache.data.daily || {};
+        const [ico, desc] = weatherInfo(c.weather_code, c.is_day);
+        const deg = v => Math.round(v) + '°';
+        const span = (cls, text) => { const e = document.createElement('span'); e.className = cls; e.textContent = text; return e; };
+        const meta = span('weather-meta', '');
+        meta.append(document.createTextNode([t(desc), weatherCache.name].filter(Boolean).join(' · ')));
+        if (d.temperature_2m_max) {
+            meta.append(document.createElement('br'), span('weather-range', '↑' + deg(d.temperature_2m_max[0]) + '  ↓' + deg(d.temperature_2m_min[0])));
+        }
+        weatherEl.append(span('weather-ico', ico), span('weather-temp', deg(c.temperature_2m)), meta);
+        const loc = LANG === 'ru' ? 'ru-RU' : 'en-US';
+        weatherEl.title = t('Ощущается как {v}, ветер {w}', { v: deg(c.apparent_temperature), w: Math.round(c.wind_speed_10m) + ' ' + (settings.weatherUnits === 'f' ? 'mph' : t('м/с')) }) +
+            '\n' + t('Обновлено в {t}', { t: new Date(weatherCache.at).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' }) }) + '\nOpen-Meteo.com';
+    }
+
+    /* ---------- Обои дня (Bing / Wikimedia Commons) ----------
+       offset — на сколько картинок назад пролистали (0 — сегодняшняя); выбор держится до конца дня */
+    const creditEl = document.getElementById('bg-credit');
+    const dailyBar = document.getElementById('daily-bar');
+    const dailyPrev = document.getElementById('daily-prev');
+    const dailyNext = document.getElementById('daily-next');
+    const DAILY_MAX = { bing: 7, wiki: 60 };   // Bing хранит только 8 последних картинок
+    let dailyWall = getStorage('dailyWall', null), dailyTried = 0, dailyBusy = false, dailyWarned = false;
+    const dailyMem = {};   // уже загруженные описания картинок: source|day|offset
+    let dailyWant = null;  // куда пролистали кликами, пока грузится предыдущая картинка
+    const dailyUrl = () => (dailyWall && dailyWall.source === settings.dailySource ? dailyWall.url : '');
+    const dailyOffset = () => (dailyWall && dailyWall.source === settings.dailySource && dailyWall.day === localDay(new Date()) ? dailyWall.offset || 0 : 0);
+    async function fetchDailyInfo(source, day, offset) {
+        const key = source + '|' + day + '|' + offset;
+        if (dailyMem[key]) return dailyMem[key];
+        let w;
+        if (source === 'wiki') {
+            const d = new Date(); d.setDate(d.getDate() - offset);
+            const date = localDay(d);
+            const j = await fetchJson('https://api.wikimedia.org/feed/v1/wikipedia/' + LANG + '/featured/' + date.replace(/-/g, '/'));
+            const im = j.image;
+            if (!im || !im.image) throw new Error('no image');
+            let url = im.image.source;
+            if (im.image.width > 1920 && im.thumbnail) url = im.thumbnail.source.replace(/\/\d+px-/, '/1920px-');
+            const desc = (im.description && im.description.text) || im.title.replace(/^File:/, '');
+            w = { url, title: desc + (im.artist && im.artist.text ? ' © ' + im.artist.text : ''), link: im.file_page, date };
+        } else {
+            const res = Math.max(screen.width, screen.height) * (window.devicePixelRatio || 1) > 2200 ? 'UHD' : '1920';
+            const j = await fetchJson('https://bing.biturl.top/?resolution=' + res + '&format=json&index=' + offset + '&mkt=' + (LANG === 'ru' ? 'ru-RU' : 'en-US'));
+            if (!j.url) throw new Error('no image');
+            const sd = String(j.start_date || '');
+            w = { url: j.url, title: j.copyright || '', link: j.copyright_link || '', date: /^\d{8}$/.test(sd) ? sd.slice(0, 4) + '-' + sd.slice(4, 6) + '-' + sd.slice(6) : '' };
+        }
+        return (dailyMem[key] = w);
+    }
+    // Картинку сначала докачиваем, чтобы фон сменился сразу целиком
+    function preloadImage(url) {
+        return new Promise(resolve => {
+            const img = new Image();
+            const timer = setTimeout(() => resolve(false), 20000);
+            img.onload = () => { clearTimeout(timer); resolve(true); };
+            img.onerror = () => { clearTimeout(timer); resolve(false); };
+            img.src = url;
+        });
+    }
+    async function refreshDaily(offset, manual) {
+        if (dailyBusy) return;
+        dailyBusy = true; dailyTried = Date.now();
+        dailyBar.classList.add('loading');
+        const day = localDay(new Date()), source = settings.dailySource;
+        offset = Math.max(0, Math.min(DAILY_MAX[source] || 0, offset || 0));
+        let ok = false;
+        try {
+            const w = await fetchDailyInfo(source, day, offset);
+            if (manual && dailyWall && w.url === dailyWall.url) throw new Error('same');   // у Bing архив кончился
+            if (manual) await preloadImage(w.url);
+            dailyWall = Object.assign({}, w, { source, day, offset });
+            setStorage('dailyWall', dailyWall);
+            ok = true;
+        } catch (e) {
+            if (manual) showToast(t('Больше обоев нет'));
+            else if (!dailyUrl() && !dailyWarned) { dailyWarned = true; showToast(t('Не удалось загрузить обои дня')); }
+        }
+        dailyBusy = false;
+        dailyBar.classList.remove('loading');
+        applyAppearance();
+        if (manual && ok && dailyWant !== null && dailyWant !== dailyOffset()) refreshDaily(dailyWant, true);
+        else if (manual) dailyWant = null;
+    }
+    function dailyGo(delta) {
+        const base = dailyWant !== null ? dailyWant : dailyOffset();
+        dailyWant = Math.max(0, Math.min(DAILY_MAX[settings.dailySource] || 0, base + delta));
+        if (!dailyBusy) refreshDaily(dailyWant, true);
+    }
+    function updateDaily() {
+        const fresh = dailyUrl() && dailyWall.day === localDay(new Date());
+        if (!fresh && Date.now() - dailyTried > 5 * 60000) refreshDaily(0);
+    }
+    function showCredit(w) {
+        dailyBar.classList.toggle('hidden', !w);
+        if (!w) return;
+        const off = dailyOffset();
+        dailyPrev.disabled = off >= (DAILY_MAX[settings.dailySource] || 0);
+        dailyNext.disabled = off <= 0;
+        let text = w.title || '';
+        if (off > 0 && w.date) {
+            const d = new Date(w.date + 'T12:00');
+            text = d.toLocaleDateString(LANG === 'ru' ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'long' }) + (text ? ' · ' + text : '');
+        }
+        creditEl.textContent = text;
+        creditEl.title = text;
+        if (w.link) creditEl.href = w.link; else creditEl.removeAttribute('href');
+    }
+    dailyPrev.addEventListener('click', () => dailyGo(1));
+    dailyNext.addEventListener('click', () => dailyGo(-1));
+    function setBgImage(url) {
+        bgEl.style.background = '';
+        bgEl.style.backgroundImage = `url("${url}")`;
+        bgEl.style.backgroundSize = 'cover';
+        bgEl.style.backgroundPosition = 'center';
+    }
+    function setBgGradient(c1, c2) {
+        bgEl.style.backgroundImage = '';
+        bgEl.style.background = generateGradient(c1, c2, gradient.angle, gradient.type);
+    }
+
     function applyAppearance() {
         root.style.setProperty('--text', settings.textColor);
         root.style.setProperty('--tile-alpha', settings.tileOpacity / 100);
@@ -1268,17 +1684,22 @@ function main() {
         applyPanelTheme();
 
         updateClock();
+        updateWeather();
         notesBox.classList.toggle('hidden', !settings.showNotes);
-        const bgNow = currentBgImage();
-        if (settings.bgMode === 'image' && bgNow) {
-            bgEl.style.background = '';
-            bgEl.style.backgroundImage = `url("${bgNow}")`;
-            bgEl.style.backgroundSize = 'cover';
-            bgEl.style.backgroundPosition = 'center';
+        let credit = null;
+        if (settings.nightBgOn && isNight()) {
+            if (settings.nightBg) setBgImage(settings.nightBg);
+            else setBgGradient(settings.nightColor1, settings.nightColor2);
+        } else if (settings.bgMode === 'daily') {
+            updateDaily();
+            if (dailyUrl()) { setBgImage(dailyUrl()); credit = dailyWall; }
+            else setBgGradient(gradient.color1, gradient.color2);
         } else {
-            bgEl.style.backgroundImage = '';
-            bgEl.style.background = generateGradient(gradient.color1, gradient.color2, gradient.angle, gradient.type);
+            const bgNow = currentBgImage();
+            if (settings.bgMode === 'image' && bgNow) setBgImage(bgNow);
+            else setBgGradient(gradient.color1, gradient.color2);
         }
+        showCredit(credit);
     }
 
     /* ===================== Поиск ===================== */
@@ -1404,12 +1825,14 @@ function main() {
         if (!setStorage('quickLinks', savedLinks)) {
             showToast(t('Не удалось сохранить: хранилище браузера переполнено'));
         }
+        onDataChange('links');
     }
     function restoreSnapshot(snap) {
         savedLinks.length = 0;
         snap.forEach(x => savedLinks.push(x));
         lastSnap = cloneTree(savedLinks);
         setStorage('quickLinks', savedLinks);
+        onDataChange('links');
         folderStack = []; folderModal.classList.remove('open');
         renderAll();
     }
@@ -1450,16 +1873,37 @@ function main() {
     function domainOf(url) {
         try { return new URL(/^https?:/i.test(url) ? url : 'https://' + url).hostname; } catch { return null; }
     }
-    async function fetchFaviconData(domain, sz) {
+    async function fetchIconBlob(url) {
         try {
             const ctrl = new AbortController();
             const timer = setTimeout(() => ctrl.abort(), 8000);
-            const r = await fetch('https://www.google.com/s2/favicons?domain=' + domain + '&sz=' + sz, { signal: ctrl.signal });
+            const r = await fetch(url, { signal: ctrl.signal });
             clearTimeout(timer);
             if (!r.ok) return null;
             const blob = await r.blob();
-            return await new Promise(res => { const fr = new FileReader(); fr.onloadend = () => res(fr.result); fr.readAsDataURL(blob); });
+            return /^image\//.test(blob.type) && blob.size ? blob : null;
         } catch { return null; }
+    }
+    async function iconPixels(blob) {
+        if (/svg/.test(blob.type)) return 1024;
+        try { const b = await createImageBitmap(blob); const s = Math.min(b.width, b.height); b.close(); return s; } catch { return 1; }
+    }
+    // Google отдаёт самую крупную иконку сайта; если её нет или она мелкая — пробуем icon.horse и берём лучшую
+    async function fetchFaviconData(domain, sz) {
+        const sources = [
+            'https://www.google.com/s2/favicons?domain=' + domain + '&sz=' + sz,
+            'https://icon.horse/icon/' + encodeURIComponent(domain)
+        ];
+        let best = null, bestPx = 0;
+        for (const src of sources) {
+            const blob = await fetchIconBlob(src);
+            if (!blob) continue;
+            const px = await iconPixels(blob);
+            if (px > bestPx) { best = blob; bestPx = px; }
+            if (px >= Math.min(sz, 64)) break;
+        }
+        if (!best) return null;
+        return new Promise(res => { const fr = new FileReader(); fr.onloadend = () => res(fr.result); fr.readAsDataURL(best); });
     }
     const domainIconCache = {};
     function iconForDomain(domain, sz) {
@@ -1578,10 +2022,16 @@ function main() {
 
     document.getElementById('edit-icon-upload').addEventListener('click', () => {
         pickFile('image/*', async file => {
-            const data = await resizeImage(file, 256, 'image/png');
+            let data;
+            try {
+                // SVG оставляем вектором — он чёткий на плитке любого размера
+                data = /svg/.test(file.type) && file.size < 300000 ? await readDataUrl(file) : await resizeImage(file, 320, 'image/png');
+            } catch (e) { showToast(e.message); return; }
             iconInput.value = '';
             faviconPreview.src = data;
             faviconPreview.dataset.custom = data;
+            const px = await imageSide(data);
+            if (px && px < 96) showToast(t('Картинка всего {s}px — на плитке она будет размытой. Лучше взять от 128px', { s: px }));
         });
     });
 
@@ -2371,17 +2821,47 @@ function main() {
         input.click();
     }
 
-    // Уменьшает картинку, чтобы она поместилась в localStorage
+    function readDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = () => reject(new Error(t('Не удалось прочитать картинку')));
+            r.readAsDataURL(file);
+        });
+    }
+    // Меньшая сторона картинки в пикселях (0 — если не прочиталась)
+    function imageSide(src) {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve(/^data:image\/svg/.test(src) ? 0 : Math.min(img.naturalWidth, img.naturalHeight));
+            img.onerror = () => resolve(0);
+            img.src = src;
+        });
+    }
+    // Уменьшает картинку, чтобы она поместилась в хранилище. Уменьшаем вдвое за шаг со сглаживанием —
+    // одним большим шагом canvas даёт «лесенку» и потерю деталей
     function resizeImage(file, maxSide, mime, quality) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             const objUrl = URL.createObjectURL(file);
             img.onload = () => {
                 const k = Math.min(1, maxSide / Math.max(img.width, img.height));
+                const tw = Math.max(1, Math.round(img.width * k)), th = Math.max(1, Math.round(img.height * k));
+                let src = img, w = img.width, h = img.height;
+                while (w / 2 >= tw && h / 2 >= th) {
+                    w = Math.round(w / 2); h = Math.round(h / 2);
+                    const step = document.createElement('canvas');
+                    step.width = w; step.height = h;
+                    const sx = step.getContext('2d');
+                    sx.imageSmoothingQuality = 'high';
+                    sx.drawImage(src, 0, 0, w, h);
+                    src = step;
+                }
                 const c = document.createElement('canvas');
-                c.width = Math.round(img.width * k);
-                c.height = Math.round(img.height * k);
-                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                c.width = tw; c.height = th;
+                const x = c.getContext('2d');
+                x.imageSmoothingQuality = 'high';
+                x.drawImage(src, 0, 0, tw, th);
                 URL.revokeObjectURL(objUrl);
                 resolve(c.toDataURL(mime || 'image/jpeg', quality || 0.88));
             };
@@ -2390,22 +2870,24 @@ function main() {
         });
     }
 
-    async function setBackgroundFromFile(file) {
+    async function setBackgroundFromFile(file, key) {
+        key = key || 'bgImage';   // bgImage — основной фон, nightBg — ночной
         // Пробуем несколько вариантов размера/качества, пока не влезет в хранилище
         const attempts = [[2560, 0.88], [1920, 0.85], [1600, 0.78], [1280, 0.7]];
         for (const [side, q] of attempts) {
             let data;
             try { data = await resizeImage(file, side, 'image/jpeg', q); }
             catch (e) { alert(e.message); return; }
-            const prev = settings.bgImage;
-            settings.bgImage = data;
-            settings.bgMode = 'image';
+            const prev = settings[key];
+            settings[key] = data;
+            if (key === 'bgImage') settings.bgMode = 'image';
             if (setStorage('homeSettings', settings)) {
+                onDataChange('settings');
                 syncSettingsUI();
                 applyAppearance();
                 return;
             }
-            settings.bgImage = prev;
+            settings[key] = prev;
         }
         alert(t('Картинка слишком большая для хранилища браузера. Выберите файл поменьше.'));
     }
@@ -2433,6 +2915,24 @@ function main() {
         $('bg-mode').value = settings.bgMode;
         $('image-controls').classList.toggle('hidden', settings.bgMode !== 'image');
         $('gradient-controls').classList.toggle('hidden', settings.bgMode !== 'gradient');
+        $('daily-controls').classList.toggle('hidden', settings.bgMode !== 'daily');
+        $('daily-source').value = settings.dailySource;
+        $('night-bg').checked = !!settings.nightBgOn;
+        $('night-controls').classList.toggle('hidden', !settings.nightBgOn);
+        $('night-c1').value = settings.nightColor1;
+        $('night-c2').value = settings.nightColor2;
+        const nightThumb = $('night-thumb');
+        nightThumb.replaceChildren();
+        if (settings.nightBg) {
+            const th = document.createElement('div');
+            th.className = 'bg-thumb';
+            th.style.backgroundImage = 'url("' + settings.nightBg + '")';
+            nightThumb.append(th);
+        }
+        $('show-weather').checked = !!settings.showWeather;
+        $('weather-controls').classList.toggle('hidden', !settings.showWeather);
+        if (document.activeElement !== $('weather-city')) $('weather-city').value = settings.weatherCity;
+        $('weather-units').value = settings.weatherUnits;
         $('dim-range').value = settings.dim;
         $('dim-val').textContent = settings.dim + '%';
         $('text-color').value = settings.textColor;
@@ -2478,6 +2978,22 @@ function main() {
         $('gradient-angle').value = gradient.angle;
     }
 
+    // Разделы-аккордеон: открыт только один. Какой — помнит браузер, не синхронизируется
+    (function rememberSections() {
+        const KEY = 'settingsSections';
+        const sects = Array.from(panel.querySelectorAll('details.sect'));
+        let open = null;
+        try { open = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* ignore */ }
+        if (Array.isArray(open)) sects.forEach(d => { d.open = d.dataset.sect === open[0]; });
+        sects.forEach(d => d.addEventListener('toggle', () => {
+            if (d.open) {
+                sects.forEach(x => { if (x !== d) x.open = false; });
+                d.scrollIntoView({ block: 'nearest' });
+            }
+            try { localStorage.setItem(KEY, JSON.stringify(sects.filter(x => x.open).map(x => x.dataset.sect))); } catch (e) { /* ignore */ }
+        }));
+    })();
+
     function update(fn, rerender) { fn(); saveSettings(); applyAppearance(); syncSettingsUI(); if (rerender) renderAll(); }
 
     $('bg-mode').addEventListener('change', e => update(() => { settings.bgMode = e.target.value; }));
@@ -2522,6 +3038,24 @@ function main() {
     $('show-notes').addEventListener('change', e => update(() => { settings.showNotes = e.target.checked; }));
     $('auto-dim').addEventListener('change', e => update(() => { settings.autoDim = e.target.checked; }));
     $('bg-rotate').addEventListener('change', e => update(() => { settings.bgRotate = e.target.value; }));
+    $('daily-source').addEventListener('change', e => { dailyTried = 0; dailyWarned = false; update(() => { settings.dailySource = e.target.value; }); });
+    $('night-bg').addEventListener('change', e => update(() => { settings.nightBgOn = e.target.checked; }));
+    $('night-upload').addEventListener('click', () => pickFile('image/*', file => setBackgroundFromFile(file, 'nightBg')));
+    $('night-clear').addEventListener('click', () => update(() => { settings.nightBg = ''; }));
+    $('night-c1').addEventListener('input', e => update(() => { settings.nightColor1 = e.target.value; }));
+    $('night-c2').addEventListener('input', e => update(() => { settings.nightColor2 = e.target.value; }));
+    $('show-weather').addEventListener('change', e => {
+        const box = e.target, on = box.checked;
+        const apply = () => { weatherTried = 0; weatherError = ''; update(() => { settings.showWeather = on; }); };
+        if (!on) { apply(); return; }
+        dataConsent.ask('locationInfo').then(ok => {
+            if (ok) apply();
+            else { box.checked = false; showToast(t('Без разрешения на передачу местоположения погода не работает')); }
+        });
+    });
+    $('weather-city').addEventListener('change', e => { weatherTried = 0; weatherError = ''; update(() => { settings.weatherCity = e.target.value.trim(); }); });
+    $('weather-city').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+    $('weather-units').addEventListener('change', e => { weatherTried = 0; update(() => { settings.weatherUnits = e.target.value; }); });
     function renderThumbs() {
         const box = $('bg-thumbs');
         box.replaceChildren();
@@ -2710,6 +3244,8 @@ function main() {
         const exportSettings = Object.assign({}, settings);
         const bg = dataUrlToFile(settings.bgImage, 'background');
         if (bg) { files.push(bg); exportSettings.bgImage = bg.name; }
+        const nightBg = dataUrlToFile(settings.nightBg, 'background_night');
+        if (nightBg) { files.push(nightBg); exportSettings.nightBg = nightBg.name; }
         if (settings.bgImages && settings.bgImages.length) {
             exportSettings.bgImages = settings.bgImages.map((d, i) => {
                 const f = dataUrlToFile(d, 'backgrounds/bg_' + String(i + 1).padStart(2, '0'));
@@ -2754,6 +3290,7 @@ function main() {
                     return ref;
                 };
                 if (data.homeSettings && data.homeSettings.bgImage) data.homeSettings.bgImage = await resolveRef(data.homeSettings.bgImage);
+                if (data.homeSettings && data.homeSettings.nightBg) data.homeSettings.nightBg = await resolveRef(data.homeSettings.nightBg);
                 if (data.homeSettings && Array.isArray(data.homeSettings.bgImages)) data.homeSettings.bgImages = await Promise.all(data.homeSettings.bgImages.map(resolveRef));
                 const resolveItems = async list => {
                     for (const it of list) {
@@ -2822,14 +3359,17 @@ function main() {
 
 
     /* ===================== Синхронизация: GitHub Gist + шифрование ===================== */
-    const syncEls = { token: $('sync-token'), pass: $('sync-pass'), scope: $('sync-scope'), remember: $('sync-remember'), status: $('sync-status') };
-    const syncCfg = Object.assign({ gistId: '', gistKey: '', remember: false, scope: 'links', lastSync: 0, token: '', pass: '' }, getStorage('syncCfg', {}));
+    const syncEls = { token: $('sync-token'), pass: $('sync-pass'), scope: $('sync-scope'), remember: $('sync-remember'), auto: $('sync-auto'), status: $('sync-status') };
+    // remoteAt — время версии в Gist, с которой совпадают данные устройства; dirty — есть неотправленные изменения
+    const syncCfg = Object.assign({ gistId: '', gistKey: '', remember: false, scope: 'links', lastSync: 0, token: '', pass: '', auto: false, dirty: false, remoteAt: 0 }, getStorage('syncCfg', {}));
+    const syncLocale = () => (LANG === 'ru' ? 'ru-RU' : 'en-US');
     function syncFillUI() {
         syncEls.token.value = syncCfg.token || '';
         syncEls.pass.value = syncCfg.pass || '';
         syncEls.scope.value = syncCfg.scope;
         syncEls.remember.checked = !!syncCfg.remember;
-        syncSetStatus(syncCfg.lastSync ? t('Последняя синхронизация: {t}', { t: new Date(syncCfg.lastSync).toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US') }) : '');
+        syncEls.auto.checked = !!syncCfg.auto;
+        syncSetStatus(syncCfg.lastSync ? t('Последняя синхронизация: {t}', { t: new Date(syncCfg.lastSync).toLocaleString(syncLocale()) }) : '');
     }
     function syncSetStatus(text) { syncEls.status.textContent = text; }
     function syncRead() {
@@ -2837,13 +3377,31 @@ function main() {
         syncCfg.pass = syncEls.pass.value;
         syncCfg.scope = syncEls.scope.value;
         syncCfg.remember = syncEls.remember.checked;
+        syncCfg.auto = syncEls.auto.checked;
     }
     function syncSave() {
         const keep = Object.assign({}, syncCfg);
         if (!keep.remember) { keep.token = ''; keep.pass = ''; }
         setStorage('syncCfg', keep);
     }
-    ['change', 'input'].forEach(ev => [syncEls.token, syncEls.pass, syncEls.scope, syncEls.remember].forEach(el => el.addEventListener(ev, () => { syncRead(); syncSave(); })));
+    ['change', 'input'].forEach(ev => [syncEls.token, syncEls.pass, syncEls.scope, syncEls.remember, syncEls.auto].forEach(el => el.addEventListener(ev, () => {
+        if (el === syncEls.auto && el.checked) syncEls.remember.checked = true;      // без сохранённого токена автосинхронизация не переживёт перезагрузку
+        if (el === syncEls.remember && !el.checked) syncEls.auto.checked = false;
+        syncRead(); syncSave();
+        if (el === syncEls.auto && ev === 'change' && el.checked) {
+            syncAllowed().then(ok => {
+                if (ok) { syncAutoSoon(500); return; }
+                el.checked = false; syncRead(); syncSave();
+            });
+        }
+    })));
+    // Токен уходит на GitHub — нужно согласие на authenticationInfo
+    function syncAllowed() {
+        return dataConsent.ask('authenticationInfo').then(ok => {
+            if (!ok) syncSetStatus(t('Нет разрешения на передачу данных для синхронизации'));
+            return ok;
+        });
+    }
 
     const toB64 = bytes => { let str = ''; for (let i = 0; i < bytes.length; i += 0x8000) str += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(str); };
     const fromB64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
@@ -2922,72 +3480,134 @@ function main() {
         await syncRememberGist(best.id);
         return ghApi('GET', '/gists/' + encodeURIComponent(best.id));
     }
+    function syncHeader(gist) {
+        try { return JSON.parse(gist.files[SYNC_FILE].content); } catch (e) { return null; }
+    }
+    async function syncPushTo(old) {
+        try { await fillMissingIcons(savedLinks); } catch (e) { /* ничего */ }
+        const gen = syncGen;
+        const payload = { format: 'homepage-sync', v: 1, savedAt: Date.now(), scope: syncCfg.scope, links: savedLinks, notes: notesText.value };
+        if (syncCfg.scope !== 'links') {
+            const st = Object.assign({}, settings);
+            if (syncCfg.scope !== 'all') { delete st.bgImage; delete st.bgImages; delete st.nightBg; }
+            payload.settings = st; payload.gradient = gradient;
+        }
+        const { header, parts } = await packPayload(payload, syncCfg.pass);
+        header.savedAt = payload.savedAt;
+        const files = { [SYNC_FILE]: { content: JSON.stringify(header) } };
+        parts.forEach((part, i) => { files['data-' + String(i + 1).padStart(3, '0') + '.txt'] = { content: part }; });
+        if (old) {
+            Object.keys(old.files || {}).forEach(name => { if (/^data-\d+\.txt$/.test(name) && !files[name]) files[name] = null; });
+            await ghApi('PATCH', '/gists/' + encodeURIComponent(old.id), { files });
+        } else {
+            const created = await ghApi('POST', '/gists', { description: 'Home page sync (generated, do not edit)', public: false, files });
+            await syncRememberGist(created.id);
+        }
+        syncCfg.lastSync = Date.now(); syncCfg.remoteAt = payload.savedAt;
+        syncCfg.dirty = syncGen !== gen;   // правки, сделанные во время отправки, уйдут следующим разом
+        syncSave();
+        syncFillUI();
+    }
+    // Загружает данные из Gist и перезагружает страницу; без auto сначала спрашивает
+    async function syncPullFrom(gist, auto) {
+        const header = syncHeader(gist);
+        if (!header) throw new Error(t('В Gist нет данных страницы'));
+        let text = '';
+        for (let i = 1; i <= header.parts; i++) {
+            const f = gist.files['data-' + String(i).padStart(3, '0') + '.txt'];
+            if (!f || f.truncated) throw new Error(t('Данные в Gist неполные'));
+            text += f.content;
+        }
+        const payload = await unpackPayload(header, text, syncCfg.pass);
+        if (payload.format !== 'homepage-sync') throw new Error(t('Неизвестный формат данных'));
+        const when = new Date(payload.savedAt).toLocaleString(syncLocale());
+        if (!auto && !confirm(t('Заменить ярлыки и заметки данными из Gist от {t}?', { t: when }))) return false;
+        const writes = [['quickLinks', payload.links || []], ['homeNotes', payload.notes || '']];
+        if (payload.settings) {
+            const st = Object.assign({}, payload.settings);
+            if (!('bgImage' in st)) { st.bgImage = settings.bgImage; st.bgImages = settings.bgImages; st.nightBg = settings.nightBg; }
+            writes.push(['homeSettings', st]);
+            if (payload.gradient) writes.push(['customGradient', [payload.gradient]]);
+        }
+        syncCfg.lastSync = Date.now(); syncCfg.remoteAt = header.savedAt || payload.savedAt; syncCfg.dirty = false;
+        syncSave();
+        for (const [k, v] of writes) { if (!(await Store.setAsync(k, v))) throw new Error(t('Не удалось сохранить: хранилище браузера переполнено.')); }
+        try { sessionStorage.setItem('syncPulled', '1'); } catch (e) { /* ignore */ }
+        location.reload();
+        return true;
+    }
     const syncBusy = (btn, on) => { btn.disabled = on; };
     $('sync-push').addEventListener('click', async () => {
+        const allowed = syncAllowed();
         syncRead();
         if (!syncCfg.token) { syncSetStatus(t('Введите токен GitHub')); return; }
+        if (!(await allowed)) return;
         const btn = $('sync-push');
         syncBusy(btn, true); syncSetStatus(t('Отправляю…'));
         try {
-            try { await fillMissingIcons(savedLinks); } catch (e) { /* ничего */ }
-            const payload = { format: 'homepage-sync', v: 1, savedAt: Date.now(), scope: syncCfg.scope, links: savedLinks, notes: notesText.value };
-            if (syncCfg.scope !== 'links') {
-                const st = Object.assign({}, settings);
-                if (syncCfg.scope !== 'all') { delete st.bgImage; delete st.bgImages; }
-                payload.settings = st; payload.gradient = gradient;
-            }
-            const { header, parts } = await packPayload(payload, syncCfg.pass);
-            const files = { [SYNC_FILE]: { content: JSON.stringify(header) } };
-            parts.forEach((part, i) => { files['data-' + String(i + 1).padStart(3, '0') + '.txt'] = { content: part }; });
-            const old = await syncFindGist();
-            if (old) {
-                Object.keys(old.files || {}).forEach(name => { if (/^data-\d+\.txt$/.test(name) && !files[name]) files[name] = null; });
-                await ghApi('PATCH', '/gists/' + encodeURIComponent(old.id), { files });
-            } else {
-                const created = await ghApi('POST', '/gists', { description: 'Home page sync (generated, do not edit)', public: false, files });
-                await syncRememberGist(created.id);
-            }
-            syncCfg.lastSync = Date.now(); syncSave();
-            syncFillUI();
+            await syncPushTo(await syncFindGist());
             showToast(t('Отправлено в Gist'));
         } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); }
         syncBusy(btn, false);
     });
     $('sync-pull').addEventListener('click', async () => {
+        const allowed = syncAllowed();
         syncRead();
         if (!syncCfg.token) { syncSetStatus(t('Введите токен GitHub')); return; }
+        if (!(await allowed)) return;
         const btn = $('sync-pull');
         syncBusy(btn, true); syncSetStatus(t('Загружаю…'));
         try {
             const gist = await syncFindGist();
             if (!gist) throw new Error(t('Gist с данными не найден. Сначала нажмите «Отправить в Gist» на другом устройстве.'));
             syncSave();
-            const hf = gist.files && gist.files[SYNC_FILE];
-            if (!hf) throw new Error(t('В Gist нет данных страницы'));
-            const header = JSON.parse(hf.content);
-            let text = '';
-            for (let i = 1; i <= header.parts; i++) {
-                const f = gist.files['data-' + String(i).padStart(3, '0') + '.txt'];
-                if (!f || f.truncated) throw new Error(t('Данные в Gist неполные'));
-                text += f.content;
+            if (!(await syncPullFrom(gist, false))) syncSetStatus('');
+        } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); }
+        syncBusy(btn, false);
+    });
+
+    /* Автосинхронизация: правки отправляются с задержкой, при открытии и возвращении на вкладку проверяется Gist.
+       Если в Gist новее, а здесь ничего не менялось — данные подтягиваются молча; если менялись оба — спрашиваем. */
+    let syncGen = 0, syncTimer = null, syncRunning = false, syncChecked = 0;
+    function syncAutoSoon(ms) { clearTimeout(syncTimer); syncTimer = setTimeout(syncAuto, ms); }
+    async function syncAuto() {
+        clearTimeout(syncTimer);
+        if (!syncCfg.auto || !syncCfg.token) return;
+        await dataConsent.ready;
+        if (!dataConsent.has('authenticationInfo')) { syncSetStatus(t('Нет разрешения на передачу данных для синхронизации')); return; }
+        if (syncRunning) { syncAutoSoon(5000); return; }
+        syncRunning = true; syncChecked = Date.now();
+        try {
+            const gist = await syncFindGist();
+            const remoteAt = (gist && (syncHeader(gist) || {}).savedAt) || 0;
+            if (remoteAt > syncCfg.remoteAt) {
+                const quiet = !syncCfg.dirty && syncCfg.remoteAt > 0;
+                const when = new Date(remoteAt).toLocaleString(syncLocale());
+                if (quiet || confirm(t('В Gist есть более новые данные от {t}. Загрузить их?\n\n«Отмена» — оставить данные этого устройства и отправить их в Gist.', { t: when }))) {
+                    await syncPullFrom(gist, true);
+                    return;
+                }
+                await syncPushTo(gist);
+            } else if (syncCfg.dirty || !gist) {
+                await syncPushTo(gist);
             }
-            const payload = await unpackPayload(header, text, syncCfg.pass);
-            if (payload.format !== 'homepage-sync') throw new Error(t('Неизвестный формат данных'));
-            const when = new Date(payload.savedAt).toLocaleString(LANG === 'ru' ? 'ru-RU' : 'en-US');
-            if (!confirm(t('Заменить ярлыки и заметки данными из Gist от {t}?', { t: when }))) { syncSetStatus(''); syncBusy(btn, false); return; }
-            const writes = [['quickLinks', payload.links || []], ['homeNotes', payload.notes || '']];
-            if (payload.settings) {
-                const st = Object.assign({}, payload.settings);
-                if (!('bgImage' in st)) { st.bgImage = settings.bgImage; st.bgImages = settings.bgImages; }
-                writes.push(['homeSettings', st]);
-                if (payload.gradient) writes.push(['customGradient', [payload.gradient]]);
-            }
-            syncCfg.lastSync = Date.now(); syncSave();
-            for (const [k, v] of writes) { if (!(await Store.setAsync(k, v))) throw new Error(t('Не удалось сохранить: хранилище браузера переполнено.')); }
-            location.reload();
-        } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); syncBusy(btn, false); }
+        } catch (e) { syncSetStatus(t('Ошибка синхронизации: {m}', { m: e.message })); }
+        finally { syncRunning = false; }
+    }
+    onDataChange = kind => {
+        if (kind === 'settings' && syncCfg.scope === 'links') return;
+        syncGen++;
+        if (!syncCfg.dirty) { syncCfg.dirty = true; syncSave(); }
+        if (syncCfg.auto) syncAutoSoon(20000);
+    };
+    document.addEventListener('visibilitychange', () => {
+        if (!syncCfg.auto) return;
+        if (document.hidden) { if (syncCfg.dirty) syncAuto(); }               // уходим со вкладки — отправляем сразу
+        else if (Date.now() - syncChecked > 5 * 60000) syncAuto();
     });
     syncFillUI();
+    try { if (sessionStorage.getItem('syncPulled')) { sessionStorage.removeItem('syncPulled'); showToast(t('Загружены изменения из Gist')); } } catch (e) { /* ignore */ }
+    if (syncCfg.auto) syncAutoSoon(1500);
 
     /* ===================== Клавиатура: стрелки, Delete ===================== */
     document.addEventListener('keydown', e => {
