@@ -188,9 +188,9 @@
         color: inherit; text-shadow: none;
     }
     .fmini { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6%; width: var(--fmini); height: var(--fmini); place-content: center; }
-    .fmini.filled { grid-template-rows: none; grid-auto-rows: 1fr; width: 88%; height: calc(var(--fmini) * 1.25); gap: 8%; margin: 4% 0; justify-items: center; align-items: center; }
+    .fmini.filled { grid-template-columns: repeat(var(--mc), var(--ms)); grid-template-rows: none; grid-auto-rows: var(--ms); width: 88%; height: calc(var(--fmini) * 1.25); gap: var(--mg); margin: 4% 0; }
     .fmini img { width: 100%; height: 100%; object-fit: contain; background: #fff; border-radius: 22%; padding: 10%; }
-    .fmini.filled img { width: 100%; height: auto; aspect-ratio: 1; max-height: 100%; padding: 6%; }
+    .fmini.filled img { padding: 6%; }
     .fmini svg { grid-column: 1 / -1; grid-row: 1 / -1; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.85; }
     .add-item .link-icon { background: rgba(255,255,255,0.14); border: 2px dashed rgba(255,255,255,0.45); box-shadow: none; color: var(--text); }
     .add-item .plus { font-size: calc(var(--ico) * 0.75); font-weight: 300; line-height: 1; }
@@ -1378,7 +1378,7 @@ function main() {
     }
 
     let NAME_INSIDE = true;
-    let MINI_COLS = 4;
+    let MINI_TW = 110, MINI_H = 50, MINI_CELL = 0;   // ширина ярлыка, высота превью папки и шаг сетки, px
 
     // Фон-слайдшоу, ночное затемнение, часы и заметки
     const sessionSeed = Math.random();
@@ -1678,8 +1678,10 @@ function main() {
         root.style.setProperty('--tw', tw + 'px');
         root.style.setProperty('--th', th + 'px');
         root.style.setProperty('--ico', Math.max(22, Math.round(NAME_INSIDE ? th * 0.44 : Math.min(tw, th) * 0.58)) + 'px');
-        root.style.setProperty('--fmini', Math.max(22, Math.round(NAME_INSIDE ? th * 0.5 : Math.min(tw, th) * 0.7)) + 'px');
-        MINI_COLS = Math.max(2, Math.min(5, Math.round(tw * 0.92 / 42)));
+        const fmini = Math.max(22, Math.round(NAME_INSIDE ? th * 0.5 : Math.min(tw, th) * 0.7));
+        root.style.setProperty('--fmini', fmini + 'px');
+        MINI_TW = tw; MINI_H = fmini * 1.25; MINI_CELL = cellW;
+        document.querySelectorAll('.fmini.filled').forEach(layoutMini);
         root.style.setProperty('--tfs', (NAME_INSIDE ? Math.max(11, Math.min(16, Math.round(th * 0.115))) : 13) + 'px');
         document.body.classList.toggle('with-search', !!settings.showSearch);
         root.style.setProperty('--tile-radius', Math.round(settings.tileRadius / 100 * Math.min(tw, th)) + 'px');
@@ -2444,6 +2446,24 @@ function main() {
         makeDraggable(el, list, item);
         return el;
     }
+    // раскладка иконок в превью папки: сетка, при которой иконки крупнее всего; если мельче 14px — показываем меньше
+    function layoutMini(mini) {
+        const icons = mini._icons || [], W = (MINI_TW + MINI_CELL * ((mini._span || 1) - 1)) * 0.88;
+        let best = null;
+        for (let n = icons.length; n >= 1 && !best; n--) {
+            for (let cols = 1; cols <= n; cols++) {
+                const rows = Math.ceil(n / cols), g = Math.max(3, Math.round(MINI_TW * 0.044));
+                const size = Math.floor(Math.min((W - g * (cols - 1)) / cols, (MINI_H - g * (rows - 1)) / rows));
+                if (size >= 14 && (!best || size > best.size)) best = { n, cols, size, g };
+            }
+        }
+        best = best || { n: 1, cols: 1, size: Math.floor(Math.min(W, MINI_H)), g: 0 };
+        mini.style.setProperty('--mc', best.cols);
+        mini.style.setProperty('--ms', best.size + 'px');
+        mini.style.setProperty('--mg', best.g + 'px');
+        if (mini.children.length === best.n) return;
+        mini.replaceChildren(...icons.slice(0, best.n).map(src => { const i = new Image(); i.src = src; i.alt = ''; i.draggable = false; return i; }));
+    }
     function buildTile(list, index) {
         if (list[index].type === 'heading') return buildHeading(list, index);
         const item = list[index], folder = isFolder(item);
@@ -2459,10 +2479,10 @@ function main() {
             const minis = [];
             (function pick(l) { for (const x of l) { if (minis.length >= MAX_MINI) return; if (isFolder(x)) pick(x.items || []); else if (x.icon && x.icon !== FALLBACK_ICON) minis.push(x); } })(item.items || []);
             if (minis.length) {
-                const cols = Math.min(MINI_COLS, minis.length);
                 mini.classList.add('filled');
-                mini.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                minis.forEach(m => { const i = new Image(); i.src = m.icon; i.alt = ''; i.draggable = false; mini.append(i); });
+                mini._icons = minis.map(m => m.icon);
+                mini._span = el.dataset.span ? +el.dataset.span : 1;
+                layoutMini(mini);
             } else mini.append(folderSvg());
             box.append(mini);
             if (item.bg) { box.style.setProperty('--tbg', item.bg); box.style.setProperty('--tfg', tileFg(item.bg)); }
