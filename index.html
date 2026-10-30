@@ -442,6 +442,8 @@
     }
     body.is-dragging .folder-out { display: block; }
     .folder-out.over { border-color: var(--accent); background: rgba(224,102,42,0.16); color: #fff; }
+    /* ярлык вынесли за пределы папки — папка сворачивается, перетаскивание продолжается на главной сетке */
+    #folder-modal.collapsed { opacity: 0; pointer-events: none; transition: opacity .15s; }
 
     /* ---------- Быстрый поиск ---------- */
     #qs { z-index: 2500; align-items: flex-start; padding-top: 14vh; background: rgba(0,0,0,0.45); backdrop-filter: blur(3px); }
@@ -2199,6 +2201,18 @@ function main() {
         document.body.classList.remove('is-dragging');
         document.querySelectorAll('.link-item.dragging, .link-heading.dragging').forEach(x => x.classList.remove('dragging'));
         document.getElementById('folder-out').classList.remove('over');
+        hoverFolderBackdrop(false);
+        if (folderModal.classList.contains('collapsed')) { folderModal.classList.remove('collapsed'); closeFolder(); }
+    }
+    // ярлык задержали над фоном вокруг папки — сворачиваем её
+    let collapseTimer = 0;
+    function hoverFolderBackdrop(on) {
+        if (!on) { clearTimeout(collapseTimer); collapseTimer = 0; return; }
+        if (collapseTimer || folderModal.classList.contains('collapsed')) return;
+        collapseTimer = setTimeout(() => {
+            collapseTimer = 0;
+            if (dragItem) { clearMarks(); folderModal.classList.add('collapsed'); }
+        }, 300);
     }
     function dropMode(e, el, target) {
         const r = el.getBoundingClientRect();
@@ -2269,6 +2283,7 @@ function main() {
         out.classList.remove('over');
         press.drop = null;
         const tg = document.elementFromPoint(press.x, press.y);
+        if (folderModal.classList.contains('open')) hoverFolderBackdrop(tg === folderModal);
         if (!tg) { clearMarks(); return; }
         if (tg.closest('#folder-out')) { out.classList.add('over'); clearMarks(); press.drop = { kind: 'out' }; return; }
         const tile = tg.closest('.link-item, .link-heading');
@@ -2288,7 +2303,7 @@ function main() {
         if (y < zone) dy = -Math.ceil((zone - y) / 6);
         else if (y > h - zone) dy = Math.ceil((y - (h - zone)) / 6);
         if (dy) {
-            if (folderModal.classList.contains('open')) document.querySelector('.folder-card').scrollTop += dy;
+            if (folderModal.classList.contains('open') && !folderModal.classList.contains('collapsed')) document.querySelector('.folder-card').scrollTop += dy;
             else window.scrollBy(0, dy);
             updateTarget();
         }
@@ -2556,6 +2571,7 @@ function main() {
     document.getElementById('folder-close').addEventListener('click', closeFolder);
     document.getElementById('folder-back').addEventListener('click', () => { folderStack.pop(); renderFolderView(); });
     folderModal.addEventListener('pointerdown', e => { if (e.target === folderModal) closeFolder(); });
+    folderModal.addEventListener('dragover', e => { if (dragItem) hoverFolderBackdrop(e.target === folderModal); });
 
     function renderAll() { renderLinks(); renderFolderView(); }
 
