@@ -910,6 +910,7 @@
     <div class="action-card">
         <div class="action-title" id="action-title"></div>
         <button class="btn" id="act-newtab">Открыть в новой вкладке</button>
+        <button class="btn" id="act-openall">Открыть все во вкладках</button>
         <button class="btn" id="act-edit">Изменить</button>
         <button class="btn danger" id="act-del">Удалить</button>
         <button class="btn" id="act-cancel">Отмена</button>
@@ -1047,6 +1048,10 @@ function main() {
  "Стиль ярлыка": "Tile style",
  "Изменить": "Edit",
  "Открыть в новой вкладке": "Open in new tab",
+ "Открыть все во вкладках": "Open all in tabs",
+ "В папке нет ссылок": "The folder has no links",
+ "Открыть {n} вкладок?": "Open {n} tabs?",
+ "Браузер заблокировал {n} из {c} вкладок — разрешите всплывающие окна для этой страницы": "The browser blocked {n} of {c} tabs — allow pop-ups for this page",
  "ghp_… (право gist)": "ghp_… (gist scope)",
  "Синхронизация (GitHub Gist)": "Sync (GitHub Gist)",
  "Токен GitHub": "GitHub token",
@@ -2356,6 +2361,7 @@ function main() {
         actionCtx = { list, item };
         document.getElementById('action-title').textContent = item.name;
         document.getElementById('act-newtab').style.display = (isFolder(item) || item.type === 'heading') ? 'none' : '';
+        document.getElementById('act-openall').style.display = isFolder(item) ? '' : 'none';
         actionSheet.classList.add('open');
     }
     function closeActionSheet() { actionSheet.classList.remove('open'); actionCtx = null; }
@@ -2365,6 +2371,27 @@ function main() {
         const c = actionCtx; closeActionSheet();
         if (c && c.item.url) window.open(c.item.url, '_blank');
     });
+    document.getElementById('act-openall').addEventListener('click', () => {
+        const c = actionCtx; closeActionSheet();
+        if (c && isFolder(c.item)) openFolderTabs(c.item);
+    });
+    // Ctrl+клик / средний клик по папке: все её ссылки (и из вложенных папок) — в новых вкладках
+    function openFolderTabs(folder) {
+        const urls = [];
+        (function walk(l) { for (const x of l || []) { if (isFolder(x)) walk(x.items); else if (x.url) urls.push(x.url); } })(folder.items);
+        if (!urls.length) { showToast(t('В папке нет ссылок')); return; }
+        if (urls.length > 15 && !confirm(t('Открыть {n} вкладок?', { n: urls.length }))) return;
+        if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {   // расширение: без блокировщика всплывающих окон
+            urls.forEach(url => { browser.tabs.create({ url, active: false }).catch(() => window.open(url, '_blank')); });
+            return;
+        }
+        let blocked = 0;
+        for (const url of urls) {
+            const w = window.open(url, '_blank');
+            if (w) { try { w.opener = null; } catch (e) { /* ignore */ } } else blocked++;
+        }
+        if (blocked) showToast(t('Браузер заблокировал {n} из {c} вкладок — разрешите всплывающие окна для этой страницы', { n: blocked, c: urls.length }));
+    }
     document.getElementById('act-edit').addEventListener('click', () => {
         const c = actionCtx; closeActionSheet();
         if (!c) return;
@@ -2511,7 +2538,9 @@ function main() {
             } else mini.append(folderSvg());
             box.append(mini);
             if (item.bg) { box.style.setProperty('--tbg', item.bg); box.style.setProperty('--tfg', tileFg(item.bg)); }
-            el.addEventListener('click', () => openFolder(item));
+            el.addEventListener('click', e => { if (e.ctrlKey || e.metaKey) openFolderTabs(item); else openFolder(item); });
+            el.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });   // без автопрокрутки колёсиком
+            el.addEventListener('auxclick', e => { if (e.button === 1) { e.preventDefault(); openFolderTabs(item); } });
             el.tabIndex = 0;
             el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFolder(item); } });
         } else {
