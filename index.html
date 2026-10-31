@@ -633,6 +633,7 @@
                 <select id="daily-source" style="flex:1">
                     <option value="bing">Bing</option>
                     <option value="wiki">Wikimedia Commons</option>
+                    <option value="picsum">Lorem Picsum (Unsplash)</option>
                 </select>
             </div>
             <div class="hint">Картинка меняется раз в день. Стрелками в левом нижнем углу можно листать прошлые обои.</div>
@@ -1573,13 +1574,13 @@ function main() {
             '\n' + t('Обновлено в {t}', { t: new Date(weatherCache.at).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' }) }) + '\nOpen-Meteo.com';
     }
 
-    /* ---------- Обои дня (Bing / Wikimedia Commons) ----------
+    /* ---------- Обои дня (Bing / Wikimedia Commons / Lorem Picsum) ----------
        offset — на сколько картинок назад пролистали (0 — сегодняшняя); выбор держится до конца дня */
     const creditEl = document.getElementById('bg-credit');
     const dailyBar = document.getElementById('daily-bar');
     const dailyPrev = document.getElementById('daily-prev');
     const dailyNext = document.getElementById('daily-next');
-    const DAILY_MAX = { bing: 7, wiki: 60 };   // Bing хранит только 8 последних картинок
+    const DAILY_MAX = { bing: 7, wiki: 60, picsum: 60 };   // Bing хранит только 8 последних картинок
     let dailyWall = getStorage('dailyWall', null), dailyTried = 0, dailyBusy = false, dailyWarned = false;
     const dailyMem = {};   // уже загруженные описания картинок: source|day|offset
     let dailyWant = null;  // куда пролистали кликами, пока грузится предыдущая картинка
@@ -1599,6 +1600,9 @@ function main() {
             if (im.image.width > 1920 && im.thumbnail) url = im.thumbnail.source.replace(/\/\d+px-/, '/1920px-');
             const desc = (im.description && im.description.text) || im.title.replace(/^File:/, '');
             w = { url, title: desc + (im.artist && im.artist.text ? ' © ' + im.artist.text : ''), link: im.file_page, date };
+        } else if (source === 'picsum') {
+            const d = new Date(); d.setDate(d.getDate() - offset);
+            w = await fetchPicsumDaily(localDay(d));
         } else {
             const res = Math.max(screen.width, screen.height) * (window.devicePixelRatio || 1) > 2200 ? 'UHD' : '1920';
             const j = await fetchJson('https://bing.biturl.top/?resolution=' + res + '&format=json&index=' + offset + '&mkt=' + (LANG === 'ru' ? 'ru-RU' : 'en-US'));
@@ -1607,6 +1611,26 @@ function main() {
             w = { url: j.url, title: j.copyright || '', link: j.copyright_link || '', date: /^\d{8}$/.test(sd) ? sd.slice(0, 4) + '-' + sd.slice(4, 6) + '-' + sd.slice(6) : '' };
         }
         return (dailyMem[key] = w);
+    }
+    // Lorem Picsum: около тысячи фото с Unsplash. «Фото дня» у сервиса нет, поэтому снимок выбирается по дате —
+    // в один день у всех один и тот же. Список отдаётся страницами по 100, их сейчас 10
+    const PICSUM_PAGES = 10;
+    function hashStr(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+        h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;   // соседние даты не должны давать одну страницу
+        return h >>> 0;
+    }
+    async function fetchPicsumDaily(date) {
+        const page = n => fetchJson('https://picsum.photos/v2/list?limit=100&page=' + n);
+        let list = await page(hashStr('picsum' + date) % PICSUM_PAGES + 1);
+        if (!Array.isArray(list) || !list.length) list = await page(1);   // страниц стало меньше
+        const wide = (list || []).filter(a => a.id != null && a.width / a.height >= 1.2);   // для фона — только горизонтальные
+        if (!wide.length) throw new Error('no image');
+        const a = wide[hashStr(date) % wide.length];
+        const W = Math.min(a.width, Math.max(screen.width, screen.height) * (window.devicePixelRatio || 1) > 2200 ? 2560 : 1920);
+        const H = Math.round(W * a.height / a.width);
+        return { url: 'https://picsum.photos/id/' + a.id + '/' + W + '/' + H, title: a.author ? '© ' + a.author + ' / Unsplash' : 'Unsplash', link: a.url || '', date };
     }
     // Картинку сначала докачиваем, чтобы фон сменился сразу целиком
     function preloadImage(url) {
